@@ -1,0 +1,161 @@
+name: Release
+
+# Publishes the operator and agent images and the Helm chart to ghcr.io for a version tag.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    name: Container images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Work out names
+        id: names
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          echo "manager=${REGISTRY}/${owner}/protem" >> "$GITHUB_OUTPUT"
+          echo "agent=${REGISTRY}/${owner}/protem-agent" >> "$GITHUB_OUTPUT"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the operator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.names.outputs.manager }}:${{ github.ref_name }}
+            ${{ steps.names.outputs.manager }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=Apache-2.0
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,scope=release,mode=max
+
+      - name: Build and push the agent image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: enforcer
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.names.outputs.agent }}:${{ github.ref_name }}
+            ${{ steps.names.outputs.agent }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=Apache-2.0
+          cache-from: type=gha,scope=release
+
+  chart:
+    name: Helm chart
+    runs-on: ubuntu-latest
+    needs: images
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Package and push the chart
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          version="${GITHUB_REF_NAME#v}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "${REGISTRY}" --username "${{ github.actor }}" --password-stdin
+          helm package deploy/helm/protem --version "${version}" --app-version "${version}" --destination dist
+          helm push "dist/protem-${version}.tgz" "oci://${REGISTRY}/${owner}/charts"
+
+  olm:
+    name: OLM bundle and catalog
+    runs-on: ubuntu-latest
+    needs: images
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Work out names
+        id: names
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          base="${REGISTRY}/${owner}/protem"
+          version="${GITHUB_REF_NAME#v}"
+          echo "base=${base}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "bundle=${base}-bundle:v${version}" >> "$GITHUB_OUTPUT"
+          echo "catalog=${base}-catalog:v${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate and validate the bundle
+        run: |
+          make bundle VERSION="${{ steps.names.outputs.version }}" \
+            IMAGE_TAG_BASE="${{ steps.names.outputs.base }}" \
+            IMG="${{ steps.names.outputs.base }}:${GITHUB_REF_NAME}"
+
+      - name: Build and push the bundle image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: bundle.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.names.outputs.bundle }}
+
+      # The catalog is rendered from the bundle image just pushed.
+      - name: Render and validate the catalog
+        run: |
+          make catalog-build VERSION="${{ steps.names.outputs.version }}" \
+            IMAGE_TAG_BASE="${{ steps.names.outputs.base }}"
+
+      - name: Build and push the catalog image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: catalog.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.names.outputs.catalog }}
