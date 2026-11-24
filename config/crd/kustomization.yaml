@@ -1,0 +1,9 @@
+# This kustomization.yaml is not intended to be run by itself,
+# since it depends on service name and namespace that are out of this kustomize package.
+# It should be run by config/default
+resources:
+- bases/protem.dev_accessprofiles.yaml
+- bases/protem.dev_accessrequests.yaml
+- bases/protem.dev_accessgrants.yaml
+- bases/protem.dev_clustergrants.yaml
+- bases/protem.dev_targetclusters.yaml
