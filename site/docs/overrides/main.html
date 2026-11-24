@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  <link rel="icon" href="{{ 'assets/brand/favicon.ico' | url }}" sizes="48x48">
+  <link rel="apple-touch-icon" href="{{ 'assets/brand/apple-touch-icon.png' | url }}">
+{% endblock %}
+
+{#- mermaid.min.js is fetched by `make site`. Loaded before Material's bundle, so Material uses it instead of fetching it from unpkg.com. -#}
+{% block scripts %}
+  {% if page and page.content and 'class="mermaid"' in page.content %}
+    <script src="{{ 'assets/javascripts/mermaid.min.js' | url }}"></script>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

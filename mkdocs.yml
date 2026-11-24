@@ -1,0 +1,138 @@
+site_name: Protem
+site_description: Temporary Kubernetes roles, requested, approved and removed on their own.
+site_url: https://protem.dev/docs/
+repo_url: https://github.com/iLLeniumStudios/protem
+repo_name: iLLeniumStudios/protem
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: _site/docs
+strict: true
+
+exclude_docs: |
+  contributing/design/
+  architecture/images/poster-credits.md
+
+validation:
+  nav:
+    omitted_files: warn
+  links:
+    anchors: warn
+    unrecognized_links: warn
+
+hooks:
+  - site/docs/hooks.py
+
+theme:
+  name: material
+  custom_dir: site/docs/overrides
+  language: en
+  font: false
+  logo: assets/brand/protem-symbol-white.svg
+  favicon: assets/brand/favicon.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Follow system preference
+  features:
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  homepage: https://protem.dev/
+
+extra_css:
+  - assets/stylesheets/protem.css
+
+plugins:
+  - search
+  - redirects:
+      redirect_maps:
+        index.md: overview.md
+
+markdown_extensions:
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Get started:
+      - getting-started/first-request.md
+  - About:
+      - What is Protem?: overview.md
+      - architecture/concepts.md
+      - architecture/how-it-works.md
+      - architecture/request-lifecycle.md
+      - architecture/hub-and-agents.md
+      - architecture/security-model.md
+  - Install:
+      - guides/how-to-install-with-helm.md
+      - guides/how-to-install-with-olm.md
+      - guides/how-to-set-up-login.md
+      - How to set up login with Entra ID: guides/how-to-set-up-login-with-entra-id.md
+      - guides/how-to-connect-a-target-cluster.md
+      - guides/how-to-upgrade.md
+  - Use:
+      - guides/how-to-request-access.md
+      - guides/how-to-approve-or-reject-a-request.md
+      - guides/how-to-revoke-access.md
+      - guides/how-to-check-who-had-access.md
+  - Administer:
+      - guides/how-to-create-a-profile.md
+      - guides/how-to-require-approval-on-some-clusters.md
+      - guides/how-to-limit-the-roles-a-cluster-allows.md
+      - How to enforce requester identity: guides/how-to-enforce-requester-identity-for-kubectl-requests.md
+  - Operations:
+      - operations/audit-log.md
+      - operations/metrics.md
+      - Runbooks:
+          - How to fix a cluster not reporting: operations/runbooks/how-to-fix-a-cluster-not-reporting.md
+          - How to fix a failed grant: operations/runbooks/how-to-fix-a-failed-grant.md
+          - How to fix a rejected request: operations/runbooks/how-to-fix-a-rejected-request.md
+          - operations/runbooks/how-to-fix-agent-unauthorized.md
+          - operations/runbooks/how-to-fix-signed-out-after-login.md
+  - Reference:
+      - reference/custom-resources.md
+      - reference/chart-values.md
+      - reference/operator-flags.md
+      - reference/agent-flags.md
+      - reference/authentication.md
+  - Decisions:
+      - adr/0001-enforce-access-with-rolebindings.md
+      - adr/0002-agents-pull-hub-holds-no-target-credentials.md
+      - adr/0003-kubernetes-resources-are-the-only-store.md
+      - adr/0004-requests-freeze-their-scope-at-creation.md
+      - adr/0005-enforce-expiry-on-the-target-cluster.md
+      - adr/0006-short-lived-join-tokens-with-agent-renewed-credentials.md
+      - adr/0007-admission-policy-enforces-requester-identity.md
+      - adr/0008-ui-management-is-opt-in-and-defers-to-gitops.md
+  - Contributing:
+      - contributing/getting-started/first-change.md

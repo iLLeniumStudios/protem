@@ -1,0 +1,81 @@
+/* Public Sans and IBM Plex Mono, self-hosted (SIL OFL 1.1, see ../fonts/LICENSE-*.txt). */
+@font-face {
+  font-family: "Public Sans";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("../fonts/public-sans-latin-300-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Public Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/public-sans-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Public Sans";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/public-sans-latin-400-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Public Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/public-sans-latin-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+}
+
+:root {
+  --md-text-font: "Public Sans";
+  --md-code-font: "IBM Plex Mono";
+}
+
+/* Protem Blue on light surfaces, Protem Blue Light on dark (brand/guidelines.md). */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: #1d5fa8;
+  --md-primary-fg-color--light: #4888d5;
+  --md-primary-fg-color--dark: #174c86;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+}
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #174c86;
+  --md-accent-fg-color--transparent: #1d5fa81a;
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #15171b;
+  --md-typeset-a-color: #4888d5;
+  --md-accent-fg-color: #7aa9e2;
+  --md-accent-fg-color--transparent: #4888d51a;
+}
+
+/* Dark header: white on Protem Blue Light is too faint, so the bar takes the page surface. */
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #0d1013;
+  border-bottom: 1px solid #ffffff1f;
+}
+@media screen and (max-width: 76.2344em) {
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title[for="__drawer"] {
+    background-color: #0d1013;
+  }
+}
+
+/* The header already names the site; on desktop the sticky sidebar title only covers the list scrolling under it. */
+@media screen and (min-width: 76.25em) {
+  .md-nav--primary > .md-nav__title {
+    display: none;
+  }
+}
