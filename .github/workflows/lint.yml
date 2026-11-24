@@ -25,7 +25,7 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # The Makefile builds the linter with this repository's Go version: a prebuilt binary
+      # refuses a module that targets a newer Go than it was built with.
       - name: Run linter
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.1.0
+        run: make lint
