@@ -1,0 +1,14 @@
+# The cluster the operator itself runs on. Its name must match the manager's
+# --hub-cluster-name (default "local"); the operator then marks it Ready without an agent.
+# Every other cluster needs an agent: see docs/guides/how-to-connect-a-target-cluster.md.
+apiVersion: protem.dev/v1alpha1
+kind: TargetCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+    env: dev
+  name: local
+spec:
+  displayName: Hub cluster
+  description: The cluster the operator runs on.

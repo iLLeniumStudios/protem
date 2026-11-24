@@ -1,0 +1,14 @@
+# The hub listens on loopback only; the proxy is the one way in. The hub still
+# verifies every ID token itself and trusts no header the proxy adds.
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --api-bind-address=127.0.0.1:8080
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --oidc-issuer-url=$(OIDC_ISSUER_URL)
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --oidc-client-id=$(OIDC_CLIENT_ID)
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --sign-out-url=/oauth2/sign_out

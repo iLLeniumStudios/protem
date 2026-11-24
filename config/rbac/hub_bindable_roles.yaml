@@ -1,0 +1,37 @@
+# The most the operator can ever grant on the hub cluster itself: it may bind only the roles
+# named here. A profile that targets the hub can grant a role only after it has been added to
+# this list deliberately. If the hub is never a target, drop this file from the kustomization.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: hub-bindable-roles
+rules:
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - clusterroles
+  verbs:
+  - bind
+  resourceNames:
+  - view
+  - edit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: hub-bindable-roles
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hub-bindable-roles
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system

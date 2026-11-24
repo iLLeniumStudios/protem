@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: protem-ui
+  namespace: system
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  selector:
+    control-plane: controller-manager
+    app.kubernetes.io/name: protem
+  ports:
+  - name: http
+    port: 80
+    targetPort: auth-proxy

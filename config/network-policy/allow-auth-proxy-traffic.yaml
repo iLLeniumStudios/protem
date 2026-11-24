@@ -1,0 +1,22 @@
+# With the auth proxy in front, the UI and API are reached only through it: this policy lets
+# any client reach the proxy port, and together with allow-metrics-traffic it is the whole of
+# the ingress the manager pod accepts. Everything else, including the hub's own port, is denied.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: allow-auth-proxy-traffic
+  namespace: system
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: protem
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 4180
+          protocol: TCP

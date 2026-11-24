@@ -1,0 +1,31 @@
+# Dev only: makes the `admin@company.com` dev persona (group protem-dev:admins) a hub admin.
+# The API decides admin rights with SubjectAccessReviews, so without this the persona is a plain user.
+# The group name carries the protem-dev: prefix so it cannot match a real IdP group.
+# kubectl apply -f hack/dev-personas-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: protem-dev-security-admin
+rules:
+  - apiGroups: ["protem.dev"]
+    resources: ["accessgrants", "accessrequests"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: ["protem.dev"]
+    resources: ["accessprofiles"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["protem.dev"]
+    resources: ["targetclusters"]
+    verbs: ["get", "list", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: protem-dev-security-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: protem-dev-security-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: protem-dev:admins

@@ -1,0 +1,7 @@
+# Kustomize component: an HTTPS Ingress for the UI behind the auth proxy. Use it on top of
+# config/sso, set the host and provide the certificate. See docs/guides/how-to-set-up-login.md.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+- ingress.yaml

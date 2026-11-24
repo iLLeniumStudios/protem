@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        envFrom:
+        - configMapRef:
+            name: protem-auth-proxy
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
+        args:
+        - --provider=oidc
+        - --oidc-issuer-url=$(OIDC_ISSUER_URL)
+        - --client-id=$(OIDC_CLIENT_ID)
+        - --redirect-url=$(PUBLIC_URL)/oauth2/callback
+        - --http-address=0.0.0.0:4180
+        - --upstream=http://127.0.0.1:8080
+        # Sends the OIDC ID token to the hub as "Authorization: Bearer".
+        - --pass-authorization-header=true
+        # API calls get 401 instead of a redirect, so the UI can show "signed out".
+        - --api-route=^/api/
+        - --skip-provider-button=true
+        - --code-challenge-method=S256
+        # Must be shorter than the IdP's ID token lifetime, or the hub rejects the stale token.
+        - --cookie-refresh=4m
+        - --cookie-secure=true
+        # An explicit value: without one, some browsers send a freshly set cookie on cross-site POSTs.
+        - --cookie-samesite=lax
+        # Who may log in is decided by the IdP; narrow it here with --allowed-group if needed.
+        - --email-domain=*
+        envFrom:
+        - configMapRef:
+            name: protem-auth-proxy
+        env:
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: cookie-secret
+        ports:
+        - name: auth-proxy
+          containerPort: 4180
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: auth-proxy
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi

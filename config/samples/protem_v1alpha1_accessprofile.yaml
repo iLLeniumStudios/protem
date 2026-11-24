@@ -1,0 +1,80 @@
+# Read-only access to the default namespace on every dev cluster, for up to four hours.
+# Anyone in the "devs" group, and the user alice@example.com, may request it; no approver is needed.
+apiVersion: protem.dev/v1alpha1
+kind: AccessProfile
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: dev-view
+  namespace: default
+spec:
+  displayName: Dev read-only
+  description: Read access to the default namespace on dev clusters.
+  role:
+    kind: ClusterRole
+    name: view
+  scope: Namespaced
+  namespaces:
+  - default
+  clusters:
+    selector:
+      matchLabels:
+        env: dev
+  duration:
+    default: 1h
+    max: 4h
+  requesters:
+    groups:
+    - devs
+    users:
+    - alice@example.com
+  justification:
+    reason: Required
+  approval:
+    pendingTimeout: 24h
+    rules:
+    - name: dev-self-service
+      mode: Auto
+---
+# The same role on production clusters: one approval from "sre-leads", at most one hour,
+# and a ticket number in the request.
+apiVersion: protem.dev/v1alpha1
+kind: AccessProfile
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: prod-view
+  namespace: default
+spec:
+  displayName: Production read-only
+  description: Read access to the default namespace on production clusters.
+  role:
+    kind: ClusterRole
+    name: view
+  scope: Namespaced
+  namespaces:
+  - default
+  clusters:
+    selector:
+      matchLabels:
+        env: prod
+  duration:
+    default: 30m
+    max: 1h
+  requesters:
+    groups:
+    - devs
+  justification:
+    reason: Required
+    ticketPattern: "^INC-[0-9]+$"
+  approval:
+    pendingTimeout: 4h
+    rules:
+    - name: prod-needs-sre
+      mode: Manual
+      approvers:
+        groups:
+        - sre-leads
+      requiredApprovals: 1

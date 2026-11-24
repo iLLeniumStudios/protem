@@ -1,0 +1,3 @@
+# Part of config/default. To install it on its own: kubectl apply -k config/admission
+resources:
+- requester_identity.yaml

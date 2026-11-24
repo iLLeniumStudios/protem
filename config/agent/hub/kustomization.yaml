@@ -1,0 +1,6 @@
+# Apply once per registered cluster into that cluster's hub namespace, for example
+# with an overlay that sets `namespace: protem-cluster-<name>`.
+resources:
+- service_account.yaml
+- role.yaml
+- role_binding.yaml

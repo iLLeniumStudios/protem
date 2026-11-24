@@ -1,0 +1,25 @@
+# A request for the dev-view profile. People normally send requests from the UI, which fills
+# in spec.requester from their login. Created with kubectl, spec.requester is whatever the
+# manifest says, unless config/admission is applied: then the API server accepts this sample
+# only from a caller whose own username is "alice"
+# (see docs/guides/how-to-enforce-requester-identity-for-kubectl-requests.md).
+apiVersion: protem.dev/v1alpha1
+kind: AccessRequest
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: alice-dev-view
+  namespace: default
+spec:
+  profileRef: dev-view
+  requester:
+    username: alice
+    email: alice@company.com
+    groups:
+    - devs
+  clusters:
+  - local
+  duration: 30m
+  justification:
+    reason: Checking a failing rollout.

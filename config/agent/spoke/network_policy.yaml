@@ -1,0 +1,17 @@
+# The agent listens on nothing: it only calls out to the hub and this cluster's API server.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: kustomize
+  name: protem-agent-deny-ingress
+  namespace: protem-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: protem
+      app.kubernetes.io/component: agent
+  policyTypes:
+  - Ingress

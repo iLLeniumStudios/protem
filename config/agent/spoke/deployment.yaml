@@ -1,0 +1,68 @@
+# The agent. It needs two things this directory does not create, so an overlay must:
+#   ConfigMap protem-agent, key cluster-name: this cluster's TargetCluster name on the hub
+#   Secret protem-agent-hub, key kubeconfig:  the hub kubeconfig from docs/guides/how-to-connect-a-target-cluster.md
+#                                             (the agent adds a key token: its renewed hub token)
+# Until both exist the pod stays in ContainerCreating / CreateContainerConfigError.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/component: agent
+    app.kubernetes.io/managed-by: kustomize
+  name: protem-agent
+  namespace: protem-system
+spec:
+  replicas: 1
+  # Never two agents at once: both would write the same grant status.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: protem
+      app.kubernetes.io/component: agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: protem
+        app.kubernetes.io/component: agent
+    spec:
+      serviceAccountName: protem-agent
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: agent
+        image: protem-agent:latest
+        args:
+        - --cluster-name=$(CLUSTER_NAME)
+        - --hub-kubeconfig=/etc/protem/hub/kubeconfig
+        - --hub-token-secret=protem-system/protem-agent-hub
+        - --zap-devel=false
+        env:
+        - name: CLUSTER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: protem-agent
+              key: cluster-name
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: hub-kubeconfig
+          mountPath: /etc/protem/hub
+          readOnly: true
+      volumes:
+      - name: hub-kubeconfig
+        secret:
+          secretName: protem-agent-hub

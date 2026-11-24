@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: protem-ui
+  namespace: protem-system
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  # annotations:
+  #   cert-manager.io/cluster-issuer: <your issuer>
+spec:
+  tls:
+  - hosts:
+    - protem.example.com
+    secretName: protem-ui-tls
+  rules:
+  - host: protem.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: protem-ui
+            port:
+              name: http

@@ -1,0 +1,11 @@
+## Append samples of your project ##
+# Applied in the order listed, so the cluster and profiles exist before the request that names
+# them: a request for a cluster the hub does not know is rejected. Grants are created by the
+# operator, never by hand.
+sortOptions:
+  order: fifo
+resources:
+- protem_v1alpha1_targetcluster.yaml
+- protem_v1alpha1_accessprofile.yaml
+- protem_v1alpha1_accessrequest.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

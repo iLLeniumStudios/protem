@@ -1,0 +1,40 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: ui-management-role
+rules:
+- apiGroups:
+  - protem.dev
+  resources:
+  - accessprofiles
+  verbs:
+  - create
+  - update
+  - delete
+- apiGroups:
+  - protem.dev
+  resources:
+  - targetclusters
+  verbs:
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: protem
+    app.kubernetes.io/managed-by: kustomize
+  name: ui-management-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ui-management-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system

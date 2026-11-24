@@ -1,0 +1,22 @@
+# Kustomize component: puts oauth2-proxy in front of the hub's UI and API.
+# config/sso shows how to use it. See docs/guides/how-to-set-up-login.md.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+- service.yaml
+
+configMapGenerator:
+- name: protem-auth-proxy
+  envs:
+  - auth-proxy.env
+
+patches:
+- path: manager_patch.yaml
+  target:
+    kind: Deployment
+    name: controller-manager
+- path: manager_args_patch.yaml
+  target:
+    kind: Deployment
+    name: controller-manager

@@ -1,0 +1,13 @@
+# The operator with single sign-on: config/default plus oauth2-proxy in front of the UI.
+# Copy this directory, then edit ../auth-proxy/auth-proxy.env (or override the ConfigMap)
+# and create the oauth2-proxy Secret. See docs/guides/how-to-set-up-login.md.
+namespace: protem-system
+
+resources:
+- ../default
+# Only here, not in config/default: it admits nothing but the proxy port (and metrics), and
+# config/default has no proxy, so there the plain UI port must stay reachable.
+- ../network-policy
+
+components:
+- ../auth-proxy

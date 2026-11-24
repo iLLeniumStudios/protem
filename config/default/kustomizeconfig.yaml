@@ -1,0 +1,9 @@
+# Makes the ValidatingAdmissionPolicyBinding follow the name prefix given to its policy.
+# kustomize v5.6 does this itself; the entry keeps older releases, such as kubectl's, in step.
+nameReference:
+- kind: ValidatingAdmissionPolicy
+  group: admissionregistration.k8s.io
+  fieldSpecs:
+  - kind: ValidatingAdmissionPolicyBinding
+    group: admissionregistration.k8s.io
+    path: spec/policyName
