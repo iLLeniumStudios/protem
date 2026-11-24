@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#1D5FA8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Protem</title>
+    <script>
+      try {
+        var mode = localStorage.getItem('protem-theme');
+        var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-O7fRNNjv.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CnqRQWfM.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
