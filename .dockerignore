@@ -1,0 +1,20 @@
+# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
+# Ignore build and test binaries.
+bin/
+# The image embeds web/dist only.
+web/node_modules/
+web/.claude/
+web/.ai-design-check/
+web/.design-snapshots/
+web/.ds-receipts/
+web/accessibility/
+web/components/
+web/content/
+web/design-systems/
+web/examples/
+web/frameworks/
+web/scripts/
+web/taste/
+web/templates/
+web/tokens/
+web/workflows/

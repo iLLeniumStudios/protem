@@ -1,0 +1,30 @@
+packages:
+  - path: github.com/iLLeniumStudios/protem/api/v1alpha1
+    include_files:
+      - accessprofile_types.go
+    output_path: web/src/generated/crd.ts
+    frontmatter: |
+      export interface LabelSelectorRequirement {
+        key: string;
+        operator: string;
+        values?: string[];
+      }
+      export interface LabelSelector {
+        matchLabels?: Record<string, string>;
+        matchExpressions?: LabelSelectorRequirement[];
+      }
+    type_mappings:
+      metav1.Duration: string
+      metav1.LabelSelector: LabelSelector
+      metav1.Condition: unknown
+      metav1.ObjectMeta: unknown
+      metav1.ListMeta: unknown
+      metav1.TypeMeta: unknown
+  - path: github.com/iLLeniumStudios/protem/internal/api
+    include_files:
+      - views.go
+    output_path: web/src/generated/views.ts
+    frontmatter: |
+      import type { AccessProfileSpec } from './crd';
+    type_mappings:
+      time.Time: string

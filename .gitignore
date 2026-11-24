@@ -1,0 +1,65 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/*
+Dockerfile.cross
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Kubernetes Generated files - skip generated files, except for vendored files
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Web UI
+node_modules/
+.ai-design-check/
+.ds-receipts/
+.design-snapshots/
+
+# Design-tool kit installed into web/ for the UI agent; not part of the product
+web/.claude/
+web/CLAUDE.md
+web/accessibility/
+web/ai-design-check.json
+web/components/
+web/content/
+web/design-systems/
+web/examples/
+web/frameworks/
+web/scripts/
+web/skills-lock.json
+web/taste/
+web/templates/
+web/tokens/
+web/workflows/
+
+# Design tool working files
+.impeccable/
+
+# macOS
+.DS_Store
+
+# OLM output of make bundle and make catalog-build
+/bundle/
+/bundle.Dockerfile
+/catalog/
+/catalog.Dockerfile
+
+# Website build output of make site
+/_site/
