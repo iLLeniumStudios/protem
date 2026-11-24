@@ -1,0 +1,22 @@
+apiVersion: v2
+name: protem
+description: Temporary Kubernetes access across many clusters, requested, approved and removed on its own when the time is up.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.30.0-0"
+home: https://github.com/iLLeniumStudios/protem
+sources:
+  - https://github.com/iLLeniumStudios/protem
+icon: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/brand/web/protem-symbol-app-icon.svg
+keywords:
+  - access
+  - rbac
+  - just-in-time
+  - multi-cluster
+  - security
+maintainers:
+  - name: iLLeniumStudios
+    url: https://github.com/iLLeniumStudios
+annotations:
+  artifacthub.io/license: Apache-2.0

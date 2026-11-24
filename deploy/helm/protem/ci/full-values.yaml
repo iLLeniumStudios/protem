@@ -1,0 +1,45 @@
+replicaCount: 2
+imagePullSecrets:
+  - name: regcred
+oidc:
+  issuerURL: https://idp.example.com/realms/example
+  clientID: protem
+hubAPIURL: https://hub.example.com:6443
+subjectTemplate: "oidc:{{.Email}}"
+uiManagement: enabled
+historyRetention: 720h
+joinTokenTTL: 30m
+extraArgs:
+  - --zap-log-level=info
+hubAllowedRoles:
+  - view
+  - edit
+  - admin
+podAnnotations:
+  example.com/team: platform
+serviceAccount:
+  annotations:
+    example.com/role: protem
+nodeSelector:
+  kubernetes.io/os: linux
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: platform
+    effect: NoSchedule
+authProxy:
+  enabled: true
+  publicURL: https://protem.example.com
+  existingSecret: oauth2-proxy
+  extraArgs:
+    - --allowed-group=platform
+ingress:
+  enabled: true
+  className: nginx
+  host: protem.example.com
+  tls:
+    secretName: protem-ui-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+networkPolicy:
+  enabled: true

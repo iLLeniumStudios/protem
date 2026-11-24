@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "protem.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "protem.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: http
+    port: 80
+    targetPort: {{ ternary "auth-proxy" 8080 .Values.authProxy.enabled }}
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "protem.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tls.secretName }}
+  tls:
+  - hosts:
+    - {{ $.Values.ingress.host | quote }}
+    secretName: {{ . }}
+  {{- end }}
+  rules:
+  - host: {{ required "ingress.host is required with ingress.enabled" .Values.ingress.host | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "protem.fullname" . }}-ui
+            port:
+              name: http
+{{- end }}
+{{- if .Values.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "protem.fullname" . }}-allow-ui-traffic
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "protem.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: {{ ternary 4180 8080 .Values.authProxy.enabled }}
+      protocol: TCP
+{{- if .Values.metrics.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "protem.fullname" . }}-allow-metrics-traffic
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "protem.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          metrics: enabled
+    ports:
+    - port: 8443
+      protocol: TCP
+{{- end }}
+{{- end }}

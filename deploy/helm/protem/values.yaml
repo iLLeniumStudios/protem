@@ -1,0 +1,127 @@
+image:
+  # Operator image.
+  repository: ghcr.io/illeniumstudios/protem
+  # Defaults to "v" followed by the chart's appVersion.
+  tag: ""
+  # Image pull policy of the operator and auth proxy containers.
+  pullPolicy: IfNotPresent
+
+# Secrets for pulling the images, e.g. [{name: regcred}].
+imagePullSecrets: []
+
+agent:
+  image:
+    # Agent image the UI puts in the install files for target clusters (--agent-image).
+    repository: ghcr.io/illeniumstudios/protem-agent
+    # Defaults to "v" followed by the chart's appVersion.
+    tag: ""
+  # Kustomize location of the agent manifests the UI's install files use (--agent-manifests).
+  # Defaults to https://github.com/iLLeniumStudios/protem//config/agent/spoke?ref=v<appVersion>.
+  manifests: ""
+
+oidc:
+  # Issuer of the ID tokens the operator accepts (--oidc-issuer-url).
+  issuerURL: ""
+  # Audience (client ID) the ID tokens must carry (--oidc-client-id).
+  clientID: ""
+
+# Name of the TargetCluster that stands for the cluster the operator runs on (--hub-cluster-name).
+hubClusterName: local
+# The hub's Kubernetes API URL as agents on target clusters reach it; needed to connect agents from the UI (--hub-api-url).
+hubAPIURL: ""
+# Maps a login to an RBAC subject, e.g. "oidc:{{.Email}}"; empty uses the operator's default "{{.Email}}" (--subject-template).
+subjectTemplate: ""
+# "readonly", or "enabled" to let the UI manage AccessProfiles and TargetClusters (also installs the role that allows it).
+uiManagement: readonly
+# Delete finished requests and their grants this long after their last audit event, e.g. 720h; empty keeps them forever.
+historyRetention: ""
+# How long a join token issued in the UI works, from 10m to 1h; empty uses the operator's default of 15m.
+joinTokenTTL: ""
+# URL the UI opens to sign out; empty hides the link, or uses /oauth2/sign_out when authProxy.enabled.
+signOutURL: ""
+# Extra command-line arguments for the operator.
+extraArgs: []
+
+# The only roles the operator may bind on the hub cluster itself; empty installs no such permission.
+hubAllowedRoles:
+  - view
+  - edit
+
+# Operator replicas; above 1 turns on leader election.
+replicaCount: 1
+
+# Resources of the operator container.
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# Node selector of the operator pod.
+nodeSelector: {}
+# Tolerations of the operator pod.
+tolerations: []
+# Affinity of the operator pod.
+affinity: {}
+# Extra annotations on the operator pod.
+podAnnotations: {}
+
+serviceAccount:
+  # Annotations on the operator's ServiceAccount.
+  annotations: {}
+
+# Security context of the operator pod.
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Security context of the operator and auth proxy containers.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+authProxy:
+  # Run oauth2-proxy next to the operator as the only way into the UI and API. See docs/guides/how-to-set-up-login.md.
+  enabled: false
+  # oauth2-proxy image.
+  image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
+  # Issuer the proxy logs users in with; defaults to oidc.issuerURL.
+  issuerURL: ""
+  # Client ID the proxy logs users in with; defaults to oidc.clientID.
+  clientID: ""
+  # Public URL of the UI, e.g. https://protem.example.com; the IdP redirects to <publicURL>/oauth2/callback.
+  publicURL: ""
+  # Secret with the keys client-secret and cookie-secret.
+  existingSecret: ""
+  # Extra command-line arguments for oauth2-proxy, e.g. --allowed-group=...
+  extraArgs: []
+
+ingress:
+  # Create an Ingress for the UI Service.
+  enabled: false
+  # IngressClass to use; empty uses the cluster's default.
+  className: ""
+  # Host name of the UI.
+  host: ""
+  tls:
+    # Secret with the TLS certificate for the host; empty serves plain HTTP.
+    secretName: ""
+  # Annotations on the Ingress, e.g. cert-manager.io/cluster-issuer.
+  annotations: {}
+
+networkPolicy:
+  # Admit traffic to the operator pod only on the UI port and, from namespaces labelled metrics=enabled, the metrics port.
+  enabled: false
+
+metrics:
+  # Serve metrics over HTTPS on :8443, readable only by subjects bound to the metrics-reader ClusterRole.
+  enabled: true
+
+admissionPolicy:
+  # Make the API server reject AccessRequests that name someone other than their creator. See docs/guides/how-to-set-up-login.md.
+  enabled: true

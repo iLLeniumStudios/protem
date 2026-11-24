@@ -1,0 +1,169 @@
+{{- $proxy := .Values.authProxy }}
+{{- $signOutURL := .Values.signOutURL | default (ternary "/oauth2/sign_out" "" $proxy.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "protem.fullname" . }}-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "protem.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "protem.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "protem.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "protem.defaultTag" .) }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - /manager
+        args:
+        {{- if .Values.metrics.enabled }}
+        - --metrics-bind-address=:8443
+        {{- end }}
+        {{- if gt (int .Values.replicaCount) 1 }}
+        - --leader-elect
+        {{- end }}
+        - --health-probe-bind-address=:8081
+        {{- if $proxy.enabled }}
+        - --api-bind-address=127.0.0.1:8080
+        {{- end }}
+        {{- with .Values.oidc.issuerURL }}
+        - {{ printf "--oidc-issuer-url=%s" . | quote }}
+        {{- end }}
+        {{- with .Values.oidc.clientID }}
+        - {{ printf "--oidc-client-id=%s" . | quote }}
+        {{- end }}
+        {{- with .Values.hubClusterName }}
+        - {{ printf "--hub-cluster-name=%s" . | quote }}
+        {{- end }}
+        {{- with .Values.hubAPIURL }}
+        - {{ printf "--hub-api-url=%s" . | quote }}
+        {{- end }}
+        {{- with .Values.subjectTemplate }}
+        - {{ printf "--subject-template=%s" . | quote }}
+        {{- end }}
+        - {{ printf "--ui-management=%s" .Values.uiManagement | quote }}
+        {{- with .Values.historyRetention }}
+        - {{ printf "--history-retention=%s" . | quote }}
+        {{- end }}
+        {{- with .Values.joinTokenTTL }}
+        - {{ printf "--join-token-ttl=%s" . | quote }}
+        {{- end }}
+        {{- with $signOutURL }}
+        - {{ printf "--sign-out-url=%s" . | quote }}
+        {{- end }}
+        - {{ printf "--agent-image=%s:%s" .Values.agent.image.repository (.Values.agent.image.tag | default (include "protem.defaultTag" .)) | quote }}
+        - {{ .Values.agent.manifests | default (printf "https://github.com/iLLeniumStudios/protem//config/agent/spoke?ref=v%s" .Chart.AppVersion) | printf "--agent-manifests=%s" | quote }}
+        {{- range .Values.extraArgs }}
+        - {{ . | quote }}
+        {{- end }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- if $proxy.enabled }}
+      - name: oauth2-proxy
+        image: {{ $proxy.image | quote }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - --provider=oidc
+        - {{ $proxy.issuerURL | default .Values.oidc.issuerURL | required "authProxy.issuerURL or oidc.issuerURL is required with authProxy.enabled" | printf "--oidc-issuer-url=%s" | quote }}
+        - {{ $proxy.clientID | default .Values.oidc.clientID | required "authProxy.clientID or oidc.clientID is required with authProxy.enabled" | printf "--client-id=%s" | quote }}
+        - {{ required "authProxy.publicURL is required with authProxy.enabled" $proxy.publicURL | trimSuffix "/" | printf "--redirect-url=%s/oauth2/callback" | quote }}
+        - --http-address=0.0.0.0:4180
+        - --upstream=http://127.0.0.1:8080
+        # Sends the OIDC ID token to the operator as "Authorization: Bearer".
+        - --pass-authorization-header=true
+        # API calls get 401 instead of a redirect, so the UI can show "signed out".
+        - "--api-route=^/api/"
+        - --skip-provider-button=true
+        - --code-challenge-method=S256
+        # Must be shorter than the IdP's ID token lifetime, or the operator rejects the stale token.
+        - --cookie-refresh=4m
+        - --cookie-secure=true
+        - --cookie-samesite=lax
+        # Who may log in is decided by the IdP; narrow it with --allowed-group in authProxy.extraArgs.
+        - "--email-domain=*"
+        {{- range $proxy.extraArgs }}
+        - {{ . | quote }}
+        {{- end }}
+        env:
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ required "authProxy.existingSecret is required with authProxy.enabled" $proxy.existingSecret }}
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ $proxy.existingSecret }}
+              key: cookie-secret
+        ports:
+        - name: auth-proxy
+          containerPort: 4180
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: auth-proxy
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+      {{- end }}

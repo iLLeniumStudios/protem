@@ -1,0 +1,163 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "protem.fullname" . }}-manager-rolebinding
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "protem.fullname" . }}-manager-role
+subjects:
+{{ include "protem.serviceAccountSubject" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "protem.fullname" . }}-leader-election-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "protem.fullname" . }}-leader-election-rolebinding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "protem.fullname" . }}-leader-election-role
+subjects:
+{{ include "protem.serviceAccountSubject" . }}
+{{- with .Values.hubAllowedRoles }}
+---
+# The most the operator can ever grant on the hub cluster itself: it may bind only these roles.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "protem.fullname" $ }}-hub-bindable-roles
+  labels:
+    {{- include "protem.labels" $ | nindent 4 }}
+rules:
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - clusterroles
+  verbs:
+  - bind
+  resourceNames:
+  {{- toYaml . | nindent 2 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "protem.fullname" $ }}-hub-bindable-roles
+  labels:
+    {{- include "protem.labels" $ | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "protem.fullname" $ }}-hub-bindable-roles
+subjects:
+{{ include "protem.serviceAccountSubject" $ }}
+{{- end }}
+{{- if eq .Values.uiManagement "enabled" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "protem.fullname" . }}-ui-management-role
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - protem.dev
+  resources:
+  - accessprofiles
+  verbs:
+  - create
+  - update
+  - delete
+- apiGroups:
+  - protem.dev
+  resources:
+  - targetclusters
+  verbs:
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "protem.fullname" . }}-ui-management-rolebinding
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "protem.fullname" . }}-ui-management-role
+subjects:
+{{ include "protem.serviceAccountSubject" . }}
+{{- end }}
+{{- range $kind := list "accessgrant" "accessprofile" "accessrequest" }}
+{{- range $role, $verbs := dict "admin" (list "*") "editor" (list "create" "delete" "get" "list" "patch" "update" "watch") "viewer" (list "get" "list" "watch") }}
+---
+# For cluster admins to grant to people; the operator does not use it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "protem.fullname" $ }}-{{ $kind }}-{{ $role }}-role
+  labels:
+    {{- include "protem.labels" $ | nindent 4 }}
+rules:
+- apiGroups:
+  - protem.dev
+  resources:
+  - {{ $kind }}s
+  verbs:
+  {{- toYaml $verbs | nindent 2 }}
+- apiGroups:
+  - protem.dev
+  resources:
+  - {{ $kind }}s/status
+  verbs:
+  - get
+{{- end }}
+{{- end }}

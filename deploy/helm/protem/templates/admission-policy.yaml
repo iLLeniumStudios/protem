@@ -1,0 +1,40 @@
+{{- if .Values.admissionPolicy.enabled }}
+{{- $name := printf "%s-requester-identity" (include "protem.fullname" .) }}
+# A request created with kubectl must name its caller as the requester, unless RBAC allows the
+# caller the verb "delegate" on accessrequests in that namespace (the operator holds it, to create
+# requests for whoever is logged in to the UI). See docs/login.md.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["protem.dev"]
+      apiVersions: ["*"]
+      operations: ["CREATE"]
+      resources: ["accessrequests"]
+  matchConditions:
+  - name: may-not-delegate
+    expression: "!authorizer.group('protem.dev').resource('accessrequests').namespace(object.metadata.namespace).check('delegate').allowed()"
+  validations:
+  - expression: "object.spec.requester.username == request.userInfo.username"
+    messageExpression: "'spec.requester.username must be your own username, ' + request.userInfo.username"
+  - expression: "object.spec.requester.email == '' || object.spec.requester.email == request.userInfo.username"
+    messageExpression: "'spec.requester.email must be empty or ' + request.userInfo.username"
+  - expression: "!has(object.spec.requester.groups) || object.spec.requester.groups.all(g, g in request.userInfo.groups)"
+    message: "spec.requester.groups may only list groups you belong to"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+spec:
+  policyName: {{ $name }}
+  validationActions: ["Deny"]
+{{- end }}
