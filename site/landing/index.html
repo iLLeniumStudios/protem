@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protem: Kubernetes access that ends on its own</title>
+<meta name="description" content="Protem is an open-source Kubernetes operator with a web UI. People request a role for a few hours, an approver decides, and the access is removed on its own when the time is up.">
+<link rel="canonical" href="https://protem.dev/">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1D5FA8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Protem">
+<meta property="og:title" content="Protem: Kubernetes access that ends on its own">
+<meta property="og:description" content="People request a role for a few hours, an approver decides, and the access is removed on its own when the time is up.">
+<meta property="og:url" content="https://protem.dev/">
+<meta property="og:image" content="https://protem.dev/assets/img/social.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="The Protem logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Protem: Kubernetes access that ends on its own">
+<meta name="twitter:description" content="People request a role for a few hours, an approver decides, and the access is removed on its own when the time is up.">
+<meta name="twitter:image" content="https://protem.dev/assets/img/social.png">
+<meta name="twitter:image:alt" content="The Protem logo">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="48x48">
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<link rel="manifest" href="assets/brand/site.webmanifest">
+<link rel="preload" href="assets/fonts/public-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("protem-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-2.9 7.6-7 9.5-4.1-1.9-7-5.2-7-9.5V6z"/><path d="M12 8.5v4M12 15.8v.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.2"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
+    <symbol id="i-unlink" viewBox="0 0 24 24"><path d="M9 7l1.5-1.5a4 4 0 0 1 5.7 5.7L14.5 13M10 17l-1.5 1.5a4 4 0 0 1-5.7-5.7L4.5 11"/><path d="M4 4l16 16"/></symbol>
+  </defs>
+</svg>
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="./" aria-label="Protem home">
+      <svg class="mark" viewBox="0 0 256 256" width="28" height="28" aria-hidden="true"><path fill-rule="evenodd" d="M24 24 L144 24 L144 64 L64 64 L64 232 L24 232 Z M232 24 L232 232 L82 232 L82 192 L192 192 L192 24 Z"/></svg>
+      <span>Protem</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="docs/">Docs</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://github.com/iLLeniumStudios/protem">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="icon-button" type="button" id="theme-toggle" hidden aria-label="Use dark theme">
+      <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title">Kubernetes access that ends on its own.</h1>
+        <p class="lede">Ask for a role for a few hours. An approver decides, and the access is removed when the time is up, on every cluster.</p>
+        <p class="hero-actions">
+          <a class="button primary" href="docs/getting-started/first-request/">Get started</a>
+          <a class="button secondary" href="https://github.com/iLLeniumStudios/protem">View on GitHub</a>
+        </p>
+        <p class="meta">An open-source Kubernetes operator with a web UI. Apache-2.0.</p>
+      </div>
+
+      <figure class="scene" id="scene" aria-label="One grant on a clock from 09:00 to 13:00. alice asks for edit in payments on prod-eu at 09:56, bob approves at 09:57, the access exists from 09:58 until 11:58, then it is removed.">
+        <div class="scene-head" aria-hidden="true">
+          <div class="who"><span class="avatar">A</span><b>alice@company.com</b><span class="what"><code>edit</code> in payments on <code>prod-eu</code></span></div>
+          <div class="left">
+            <span class="c0"><small>2h requested</small>waiting for bob</span>
+            <span class="c1"><small>approved</small>ends in 2h 0m</span>
+            <span class="c2"><small>until 11:58</small>ends in 1h 10m</span>
+            <span class="c3"><small>until 11:58</small>ends in 24m</span>
+            <span class="c4"><small>access expired</small>ended at 11:58</span>
+          </div>
+        </div>
+        <div class="track" aria-hidden="true">
+          <div class="tick tick-start" style="left:0"><span>09:00</span></div>
+          <div class="tick" style="left:25%"><span>10:00</span></div>
+          <div class="tick" style="left:50%"><span>11:00</span></div>
+          <div class="tick" style="left:75%"><span>12:00</span></div>
+          <div class="tick tick-end" style="left:100%"><span>13:00</span></div>
+          <div class="window">
+            <div class="inner">
+              <div class="used"></div>
+              <div class="pending">Requested 2h for INC-4821</div>
+              <div class="fill"><span>RoleBinding on prod-eu</span></div>
+              <div class="gone"><s>RoleBinding</s> removed from prod-eu</div>
+            </div>
+            <span class="piece v-left"></span><span class="piece arm-top"></span>
+            <span class="piece v-right"></span><span class="piece arm-bottom"></span>
+          </div>
+          <div class="now"><span>NOW</span></div>
+        </div>
+        <ol class="stages" aria-hidden="true">
+          <li class="st1"><b>Requested</b><span>09:56 by alice</span></li>
+          <li class="st2"><b>Approved</b><span>09:57 by bob</span></li>
+          <li class="st3"><b>Active</b><span>on prod-eu</span></li>
+          <li class="st4"><b>Removed</b><span>11:58 by the agent</span></li>
+        </ol>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec approve" aria-labelledby="approve-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="approve-title">See what you are approving</h2>
+        <p>A request shows the role's actual rules, risky ones first, and how long the access will run, before anyone says yes.</p>
+      </div>
+      <div class="pane" role="img" aria-label="alice requests Payments edit: pending, waiting for one approval from sre-leads. Role edit in payments on prod-eu, 2 hours, ticket INC-4821, reason Rotate the gateway certificate. What this access allows: 28 rules in role edit, 4 flagged, including reading Secrets and opening a shell into pods.">
+        <div class="pane-head" aria-hidden="true">
+          <div class="pane-title">alice requests Payments edit</div>
+          <div class="pane-sub">
+            <span class="badge pending"><svg class="i"><use href="#i-clock"/></svg>Pending</span>
+            <span>Sent 2 min ago</span>
+          </div>
+          <div class="approvers">
+            Approvers <b>sre-leads</b> · 0 of 1 approval
+            <span class="callout c1"><i class="line"></i><span>Needs 1 approval from sre-leads</span></span>
+          </div>
+        </div>
+        <div class="details" aria-hidden="true">
+          <div class="drow">
+            <div><div class="dl">Requester</div><div class="dv mono">alice@company.com</div></div>
+            <div><div class="dl">Profile</div><div class="dv accent">Payments edit</div></div>
+          </div>
+          <div class="drow">
+            <div><div class="dl">Role and scope</div><div class="dv"><span class="tag">edit</span> in <span class="mono">payments</span></div></div>
+            <div><div class="dl">Clusters</div><div class="dv mono">prod-eu</div></div>
+          </div>
+          <div class="drow">
+            <div><div class="dl">Duration</div><div class="dv mono"><span class="hl">2h</span></div></div>
+            <div><div class="dl">Ticket</div><div class="dv mono">INC-4821</div></div>
+            <span class="callout c2"><i class="line"></i><span>Ends on its own in 2h</span></span>
+          </div>
+          <div class="drow">
+            <div style="grid-column:1/-1"><div class="dl">Reason</div><div class="dv">Rotate the gateway certificate</div></div>
+          </div>
+        </div>
+        <div class="allows" aria-hidden="true">
+          <div class="allows-h"><b>What this access allows</b><span>28 rules in role edit, 4 flagged</span></div>
+          <span class="callout c3"><i class="line"></i><span>What this access allows, risky rules first</span></span>
+          <ul class="rules">
+            <li><svg class="i"><use href="#i-shield"/></svg><div><strong>Can read Secrets.</strong><div class="res">secrets · get, list, watch</div></div></li>
+            <li><svg class="i"><use href="#i-shield"/></svg><div><strong>Can open a shell or a network tunnel into pods.</strong><div class="res">pods/exec, pods/attach, pods/portforward · create</div></div></li>
+            <li><svg class="i"><use href="#i-shield"/></svg><div><strong>Can impersonate service accounts.</strong><div class="res">serviceaccounts · impersonate</div></div></li>
+          </ul>
+        </div>
+        <div class="decide" aria-hidden="true">
+          <div class="fake-input">Comment, required to reject</div>
+          <div class="btns">
+            <span class="pbtn reject"><svg class="i"><use href="#i-x"/></svg>Reject request</span>
+            <span class="pbtn approve"><svg class="i"><use href="#i-check"/></svg>Approve request</span>
+          </div>
+          <p class="note"><svg class="i"><use href="#i-info"/></svg>Approving grants 2h on prod-eu. Access is removed on its own when the time is up.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec why" aria-labelledby="why-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="why-title">Nobody keeps access just in case</h2>
+        <p>Six decisions keep temporary access temporary, and each one shows in the product.</p>
+      </div>
+      <div class="bento">
+        <article class="tile t-ends">
+          <div>
+            <h3>Access ends on its own.</h3>
+            <p class="lede">Every grant has an end time, and the agent on the cluster enforces it, so access still ends while the hub is unreachable.</p>
+          </div>
+          <div class="vig grant-card" role="img" aria-label="A grant for alice, edit in payments on prod-eu, from 19:28 to 21:28. The hub is unreachable for part of that time, and the agent still removes the RoleBinding at 21:28.">
+            <div class="gc-top">
+              <div><div class="gc-who">alice@company.com</div><div class="gc-what">edit in payments · prod-eu</div></div>
+              <span class="dk-badge on">Active</span>
+            </div>
+            <div class="track2">
+              <div class="rail"></div>
+              <div class="outage"><em>Hub unreachable</em></div>
+              <div class="elapsed"></div>
+              <div class="now2"></div>
+            </div>
+            <div class="ticks">
+              <div><b>19:28</b>Granted</div>
+              <div><b>21:28</b>Ends, on the cluster's own clock</div>
+            </div>
+            <div class="removed"><svg class="i"><use href="#i-unlink"/></svg><span>RoleBinding protem-grant-&hellip; in payments: bound</span></div>
+          </div>
+        </article>
+
+        <article class="tile t-fleet">
+          <div>
+            <h3>Many clusters, no stored admin credentials.</h3>
+            <p class="lede">Each agent pulls its own grants. The hub holds no credentials for the clusters it serves.</p>
+          </div>
+          <svg class="vig fleet-svg" viewBox="0 0 460 360" role="img" aria-label="One hub holds a namespace per cluster and no cluster credentials. Agents on prod-eu, prod-us and staging-eu each pull from their own namespace.">
+            <rect class="s-surface" x="70" y="8" width="320" height="150" rx="14"/>
+            <text class="s-text t-strong" x="90" y="38" font-size="15" font-weight="600">Hub</text>
+            <text class="s-text-3" x="370" y="38" font-size="12" text-anchor="end">no cluster credentials</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12">
+              <rect class="s-chip" x="90" y="54" width="280" height="26" rx="6"/>
+              <text class="s-text" x="102" y="71">prod-eu/</text><text class="s-text-3" x="358" y="71" text-anchor="end">ClusterGrant</text>
+              <rect class="s-chip" x="90" y="86" width="280" height="26" rx="6"/>
+              <text class="s-text" x="102" y="103">prod-us/</text><text class="s-text-3" x="358" y="103" text-anchor="end">ClusterGrant</text>
+              <rect class="s-chip" x="90" y="118" width="280" height="26" rx="6"/>
+              <text class="s-text" x="102" y="135">staging-eu/</text><text class="s-text-3" x="358" y="135" text-anchor="end">ClusterGrant</text>
+            </g>
+            <g class="s-accent-stroke" fill="none" stroke-width="2" stroke-linecap="round">
+              <path class="pull" d="M75 262 V200 Q75 182 93 182 H130 V145"/>
+              <path class="pull" d="M230 262 V160"/>
+              <path class="pull" d="M385 262 V200 Q385 182 367 182 H330 V145"/>
+            </g>
+            <g class="s-accent-fill">
+              <path d="M130 140 l-5 8 h10z"/><path d="M230 155 l-5 8 h10z"/><path d="M330 140 l-5 8 h10z"/>
+            </g>
+            <text class="s-text-2" x="240" y="214" font-size="12">pull</text>
+            <g>
+              <rect class="s-surface" x="8" y="262" width="134" height="86" rx="12"/>
+              <text class="s-text t-mono" x="22" y="288" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500">prod-eu</text>
+              <rect class="s-soft" x="22" y="304" width="62" height="26" rx="13"/>
+              <text class="s-accent-text" x="53" y="321" font-size="12" font-weight="600" text-anchor="middle">agent</text>
+              <rect class="s-surface" x="163" y="262" width="134" height="86" rx="12"/>
+              <text class="s-text t-mono" x="177" y="288" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500">prod-us</text>
+              <rect class="s-soft" x="177" y="304" width="62" height="26" rx="13"/>
+              <text class="s-accent-text" x="208" y="321" font-size="12" font-weight="600" text-anchor="middle">agent</text>
+              <rect class="s-surface" x="318" y="262" width="134" height="86" rx="12"/>
+              <text class="s-text t-mono" x="332" y="288" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500">staging-eu</text>
+              <rect class="s-soft" x="332" y="304" width="62" height="26" rx="13"/>
+              <text class="s-accent-text" x="363" y="321" font-size="12" font-weight="600" text-anchor="middle">agent</text>
+            </g>
+          </svg>
+        </article>
+
+        <article class="tile t-see">
+          <div>
+            <h3>Approvers see what they approve.</h3>
+            <p class="lede">The role's actual rules, with the risky ones listed first.</p>
+          </div>
+          <div class="vig">
+            <ul class="see-list">
+              <li class="flag"><svg class="i"><use href="#i-shield"/></svg><div>Can read Secrets.<div class="res">secrets · get, list, watch</div></div><span class="kind">Flagged</span></li>
+              <li class="flag"><svg class="i"><use href="#i-shield"/></svg><div>Can open a shell into pods.<div class="res">pods/exec · create</div></div><span class="kind">Flagged</span></li>
+              <li class="plain"><svg class="i"><use href="#i-check"/></svg><div>pods, services, configmaps<div class="res">get, list, watch</div></div><span></span></li>
+              <li class="plain"><svg class="i"><use href="#i-check"/></svg><div>deployments<div class="res">create, update, patch</div></div><span></span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="tile t-git">
+          <div>
+            <h3>Git first.</h3>
+            <p class="lede">Who may request which role, where, and who approves are resources you keep in Git. The UI steps back for anything Argo&nbsp;CD, Flux or Helm manages.</p>
+          </div>
+          <div class="vig code">
+            <div class="code-bar"><span class="file">profiles/payments-edit.yaml</span><span class="lock"><svg class="i"><use href="#i-lock"/></svg>Managed by Argo CD</span></div>
+<pre><span class="k">kind:</span> <span class="v">AccessProfile</span>
+<span class="k">metadata:</span>
+  <span class="k">name:</span> payments-edit
+<span class="k">spec:</span>
+  <span class="k">role:</span> { <span class="k">kind:</span> ClusterRole, <span class="k">name:</span> <span class="v">edit</span> }
+  <span class="k">namespaces:</span> [ payments ]
+  <span class="k">duration:</span> { <span class="k">default:</span> <span class="s">1h</span>, <span class="k">max:</span> <span class="s">2h</span> }
+  <span class="k">approval:</span>
+    <span class="k">rules:</span>
+    - { <span class="k">name:</span> prod-needs-sre, <span class="k">mode:</span> Manual, <span class="k">requiredApprovals:</span> 1 }</pre>
+            <div class="code-foot">In the UI: &ldquo;Managed by Argo CD. Change it in Git; edits here would be reverted.&rdquo;</div>
+          </div>
+        </article>
+
+        <article class="tile t-limit">
+          <div>
+            <h3>The cluster owner sets the limit.</h3>
+            <p class="lede">An agent binds only the roles its own cluster allows, whatever the hub asks for.</p>
+          </div>
+          <div class="vig limit">
+            <div class="limit-h"><b>prod-eu</b><span>Allowed roles</span></div>
+            <ul class="roles">
+              <li class="ok"><svg class="i"><use href="#i-check"/></svg><span class="r">view</span></li>
+              <li class="ok"><svg class="i"><use href="#i-check"/></svg><span class="r">edit</span></li>
+              <li class="ok"><svg class="i"><use href="#i-check"/></svg><span class="r">payments-operator</span></li>
+              <li class="no"><svg class="i"><use href="#i-x"/></svg><span class="r">cluster-admin</span><span class="why">Not allowed here</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="tile t-rbac">
+          <div>
+            <h3>Plain RBAC.</h3>
+            <p class="lede">A grant is an ordinary RoleBinding. No authorization webhook and no API server flags, so it does not depend on control-plane access.</p>
+          </div>
+          <div class="vig">
+            <div class="term"><span class="p">$</span> <span class="c">kubectl get rolebindings -n payments -l protem.dev/managed-by</span>
+<span class="h">NAME                                                    ROLE               AGE</span>
+protem-grant-protem-system.grant-alice-payments-edit    ClusterRole/edit   12m
+<span class="p">$</span> <span class="c">kubectl auth can-i update deployments -n payments --as alice@company.com</span>
+<span class="y">yes</span></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec band" aria-labelledby="tl-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="tl-title">See who has access, and until when</h2>
+        <p>The access timeline shows every live grant on every cluster, each bar ending where its time ends.</p>
+      </div>
+      <div class="tl-wrap" role="img" aria-label="Access timeline at 19:31: on prod-eu, alice has edit in payments until 21:28 and bob has view in payments until 22:28; on prod-us there are no live grants; on staging-eu, carol has edit in default until 20:58; on dev-1, dave has view in default until 23:10.">
+        <div class="tl" aria-hidden="true">
+          <div class="tl-row tl-head">
+            <div class="tl-name">Cluster</div>
+            <div class="tl-lane"><div class="axis"><span class="now"><em>Now 19:31</em></span><span>20:31</span><span>21:31</span><span>22:31</span><span>23:31</span><span>00:31</span></div></div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-name"><b>prod-eu</b><span>Production EU · 2 grants</span></div>
+            <div class="tl-lane">
+              <div class="g"><i style="width:32.6%"></i><b style="left:32.6%">alice@company.com<span class="m">edit in payments · until 21:28</span></b></div>
+              <div class="g"><i style="width:49.3%"></i><b style="left:49.3%">bob@company.com<span class="m">view in payments · until 22:28</span></b></div>
+            </div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-name"><b>prod-us</b><span>Production US</span></div>
+            <div class="tl-lane"><span class="none">No live grants</span></div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-name"><b>staging-eu</b><span>Staging EU · 1 grant</span></div>
+            <div class="tl-lane">
+              <div class="g soon"><i style="width:24.2%"></i><b style="left:24.2%">carol@company.com<span class="m">edit in default · until 20:58</span></b></div>
+            </div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-name"><b>dev-1</b><span>Dev 1 · 1 grant</span></div>
+            <div class="tl-lane">
+              <div class="g"><i style="width:60.8%"></i><b style="left:60.8%">dave@company.com<span class="m">view in default · until 23:10</span></b></div>
+            </div>
+          </div>
+        </div>
+        <div class="nowline" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="how-title">How it fits together</h2>
+        <p>Everything is a Kubernetes resource on one hub, with no database. Agents pull from the hub; the hub never reaches into your clusters.</p>
+      </div>
+      <svg class="fit-svg" viewBox="0 0 1248 440" role="img" aria-label="People sign in through your login proxy and request or approve in the web UI. Profiles come from Git through Argo CD, Flux or Helm. The hub cluster runs the operator and the web UI and stores everything as Kubernetes resources. An agent on each target cluster pulls its own grants from the hub and creates and removes RoleBindings.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="s-accent-fill-p" d="M0 0 L10 5 L0 10 z"/></marker>
+          <marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="s-text-3-fill" d="M0 0 L10 5 L0 10 z"/></marker>
+        </defs>
+        <g>
+          <rect class="s-surface" x="0" y="40" width="250" height="150" rx="16"/>
+          <text class="s-text t-strong" x="24" y="76" font-size="18" font-weight="600">People</text>
+          <text class="s-text-2" x="24" y="102" font-size="14">Requesters and approvers,</text>
+          <text class="s-text-2" x="24" y="122" font-size="14">in a browser or on a phone</text>
+          <g class="s-text-stroke" fill="none" stroke-width="1.8"><circle cx="40" cy="152" r="8"/><path d="M26 176 a14 12 0 0 1 28 0"/><circle cx="78" cy="152" r="8"/><path d="M64 176 a14 12 0 0 1 28 0"/></g>
+        </g>
+        <g>
+          <rect class="s-surface" x="0" y="250" width="250" height="150" rx="16"/>
+          <text class="s-text t-strong" x="24" y="286" font-size="18" font-weight="600">Git</text>
+          <text class="s-text-2" x="24" y="312" font-size="14">Profiles, applied by</text>
+          <text class="s-text-2" x="24" y="332" font-size="14">Argo CD, Flux or Helm</text>
+          <text class="s-text-3" x="24" y="372" font-family="IBM Plex Mono, monospace" font-size="13">profiles/*.yaml</text>
+        </g>
+        <g class="s-accent-stroke" fill="none" stroke-width="2">
+          <path d="M252 115 H372" marker-end="url(#ah)"/>
+          <path class="s-text-3-stroke" d="M252 325 H372" marker-end="url(#ahg)"/>
+        </g>
+        <text class="s-text-2" x="262" y="104" font-size="13">via your login proxy</text>
+        <text class="s-text-2" x="262" y="314" font-size="13">GitOps sync</text>
+
+        <g>
+          <rect class="s-soft" x="384" y="20" width="440" height="400" rx="6"/>
+          <path class="s-accent-fill-p" d="M384 20 h92 v10 h-82 v120 h-10 z"/>
+          <path class="s-accent-fill-p" d="M824 420 h-92 v-10 h82 v-120 h10 z"/>
+          <text class="s-ink" x="412" y="64" font-size="20" font-weight="700">Hub cluster</text>
+          <text class="s-text-2" x="412" y="88" font-size="14">No database. No cluster credentials.</text>
+          <rect class="s-surface" x="412" y="110" width="186" height="80" rx="12"/>
+          <text class="s-text t-strong" x="430" y="142" font-size="15" font-weight="600">Operator</text>
+          <text class="s-text-2" x="430" y="164" font-size="13">checks, approves, grants</text>
+          <rect class="s-surface" x="610" y="110" width="186" height="80" rx="12"/>
+          <text class="s-text t-strong" x="628" y="142" font-size="15" font-weight="600">Web UI and API</text>
+          <text class="s-text-2" x="628" y="164" font-size="13">request, approve, revoke</text>
+          <rect class="s-surface" x="412" y="206" width="384" height="182" rx="12"/>
+          <text class="s-text t-strong" x="430" y="238" font-size="15" font-weight="600">Kubernetes resources</text>
+          <g class="s-text" font-family="IBM Plex Mono, monospace" font-size="13">
+            <text x="430" y="268">AccessProfile</text><text x="610" y="268">AccessRequest</text>
+            <text x="430" y="294">AccessGrant</text><text x="610" y="294">TargetCluster</text>
+            <text class="s-accent-text" x="430" y="328">prod-eu/ClusterGrant</text>
+            <text class="s-accent-text" x="430" y="350">prod-us/ClusterGrant</text>
+            <text class="s-accent-text" x="430" y="372">staging-eu/ClusterGrant</text>
+          </g>
+        </g>
+
+        <g class="s-accent-stroke" fill="none" stroke-width="2">
+          <path class="pull" d="M968 92 H930 Q910 92 910 112 V323 Q910 343 890 343 H800" marker-end="url(#ah)"/>
+          <path class="pull" d="M968 220 H930 Q910 220 910 240 V345" />
+          <path class="pull" d="M968 348 H912" />
+        </g>
+        <text class="s-text-2" x="924" y="200" font-size="13" transform="rotate(-90 924 200)" text-anchor="middle">pulls its own grants</text>
+        <g>
+          <rect class="s-surface" x="968" y="40" width="280" height="104" rx="16"/>
+          <text class="s-text t-mono" x="992" y="74" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="500">prod-eu</text>
+          <rect class="s-soft" x="992" y="90" width="64" height="28" rx="14"/><text class="s-accent-text" x="1024" y="109" font-size="13" font-weight="600" text-anchor="middle">agent</text>
+          <text class="s-text-2" x="1068" y="109" font-size="13">binds and removes</text>
+          <text class="s-text-2" x="1068" y="127" font-size="13">RoleBindings</text>
+          <rect class="s-surface" x="968" y="168" width="280" height="104" rx="16"/>
+          <text class="s-text t-mono" x="992" y="202" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="500">prod-us</text>
+          <rect class="s-soft" x="992" y="218" width="64" height="28" rx="14"/><text class="s-accent-text" x="1024" y="237" font-size="13" font-weight="600" text-anchor="middle">agent</text>
+          <text class="s-text-2" x="1068" y="237" font-size="13">only roles this</text>
+          <text class="s-text-2" x="1068" y="255" font-size="13">cluster allows</text>
+          <rect class="s-surface" x="968" y="296" width="280" height="104" rx="16"/>
+          <text class="s-text t-mono" x="992" y="330" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="500">staging-eu</text>
+          <rect class="s-soft" x="992" y="346" width="64" height="28" rx="14"/><text class="s-accent-text" x="1024" y="365" font-size="13" font-weight="600" text-anchor="middle">agent</text>
+          <text class="s-text-2" x="1068" y="365" font-size="13">ends access on</text>
+          <text class="s-text-2" x="1068" y="383" font-size="13">a local timer</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <section class="git" aria-labelledby="git-title">
+    <div class="wrap git-grid">
+      <div class="git-copy">
+        <h2 id="git-title">Defined in Git</h2>
+        <p>A profile is a Kubernetes resource on the hub. It says which role can be requested, on which clusters, by whom, for how long, and who approves; there is no database behind it.</p>
+        <p>Keep profiles in Git and let Argo&nbsp;CD, Flux or Helm apply them. The UI shows anything they manage as read-only.</p>
+        <p><a href="docs/guides/how-to-request-access/">Read the guides</a></p>
+      </div>
+      <div class="code">
+        <div class="code-head">
+          <span>prod-view.yaml</span>
+          <button class="copy" type="button" data-copy="profile-yaml" hidden>Copy manifest</button>
+        </div>
+<pre id="profile-yaml" tabindex="0" aria-label="AccessProfile manifest"><code><span class="k">apiVersion:</span> protem.dev/v1alpha1
+<span class="k">kind:</span> AccessProfile
+<span class="k">metadata:</span>
+  <span class="k">name:</span> prod-view
+  <span class="k">namespace:</span> default
+<span class="k">spec:</span>
+  <span class="k">displayName:</span> Production read-only
+  <span class="k">role:</span>
+    <span class="k">kind:</span> ClusterRole
+    <span class="k">name:</span> view
+  <span class="k">scope:</span> Namespaced
+  <span class="k">namespaces:</span>
+  - default
+  <span class="k">clusters:</span>
+    <span class="k">selector:</span>
+      <span class="k">matchLabels:</span>
+        <span class="k">env:</span> prod
+  <span class="k">duration:</span>
+    <span class="k">default:</span> 30m
+    <span class="k">max:</span> 1h
+  <span class="k">requesters:</span>
+    <span class="k">groups:</span>
+    - devs
+  <span class="k">justification:</span>
+    <span class="k">reason:</span> Required
+    <span class="k">ticketPattern:</span> <span class="s">"^INC-[0-9]+$"</span>
+  <span class="k">approval:</span>
+    <span class="k">rules:</span>
+    - <span class="k">name:</span> prod-needs-sre
+      <span class="k">mode:</span> Manual
+      <span class="k">approvers:</span>
+        <span class="k">groups:</span>
+        - sre-leads
+      <span class="k">requiredApprovals:</span> 1</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="install" id="install" aria-labelledby="install-title">
+    <div class="wrap narrow">
+      <h2 id="install-title">Install</h2>
+      <p>Install the operator on your hub cluster with Helm. Replace <var>&lt;version&gt;</var> with a released chart version.</p>
+      <div class="code command">
+        <div class="code-head">
+          <span>Shell</span>
+          <button class="copy" type="button" data-copy="helm-cmd" hidden>Copy command</button>
+        </div>
+<pre id="helm-cmd" tabindex="0" aria-label="Helm install command"><code>helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
+  --version <var>&lt;version&gt;</var> \
+  --namespace protem-system --create-namespace</code></pre>
+      </div>
+      <ul class="install-links">
+        <li><a href="docs/guides/how-to-install-with-helm/">Read the Helm install guide</a></li>
+        <li>Using Operator Lifecycle Manager? <a href="docs/guides/how-to-install-with-olm/">Read the OLM install guide</a></li>
+      </ul>
+      <p class="status">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span><strong>Alpha software.</strong> The API is <code>v1alpha1</code> and may change, there has been no independent security review, and it has only been run on kind and k3d. Do not put it in front of production clusters yet.</span>
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <a class="brand" href="./" aria-label="Protem home">
+      <svg class="mark" viewBox="0 0 256 256" width="24" height="24" aria-hidden="true"><path fill-rule="evenodd" d="M24 24 L144 24 L144 64 L64 64 L64 232 L24 232 Z M232 24 L232 232 L82 232 L82 192 L192 192 L192 24 Z"/></svg>
+      <span>Protem</span>
+    </a>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="docs/">Docs</a></li>
+        <li><a href="https://github.com/iLLeniumStudios/protem">GitHub</a></li>
+        <li><a href="https://github.com/iLLeniumStudios/protem/blob/main/SECURITY.md">Security policy</a></li>
+        <li><a href="https://github.com/iLLeniumStudios/protem/blob/main/LICENSE">Licence: Apache-2.0</a></li>
+      </ul>
+    </nav>
+    <p class="fine">Kubernetes is a registered trademark of The Linux Foundation. Its mark appears in the diagram above to refer to Kubernetes and implies no endorsement.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, toggle = document.getElementById("theme-toggle");
+  var system = matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (system.matches ? "dark" : "light"); }
+  function apply() {
+    toggle.setAttribute("aria-label", current() === "dark" ? "Use light theme" : "Use dark theme");
+  }
+  toggle.hidden = false;
+  toggle.addEventListener("click", function () {
+    root.dataset.theme = current() === "dark" ? "light" : "dark";
+    try { localStorage.setItem("protem-theme", root.dataset.theme); } catch (e) {}
+    apply();
+  });
+  system.addEventListener("change", apply);
+  apply();
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    if (!navigator.clipboard) return;
+    var label = b.textContent;
+    b.hidden = false;
+    b.addEventListener("click", function () {
+      navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent).then(function () {
+        b.textContent = "Copied"; setTimeout(function () { b.textContent = label; }, 2000);
+      });
+    });
+  });
+  var scene = document.getElementById("scene");
+  if (scene && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      scene.classList.toggle("paused", !entries[0].isIntersecting);
+    }).observe(scene);
+  }
+})();
+</script>
+</body>
+</html>
