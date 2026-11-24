@@ -601,21 +601,6 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
   gap: 0.4rem;
   font-size: 0.9375rem;
 }
-.status {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  margin-top: 1.75rem;
-  padding: 1rem 1.1rem;
-  background: var(--color-warning-soft);
-  border: 1px solid color-mix(in srgb, var(--color-warning-text) 35%, transparent);
-  border-radius: 10px;
-  color: var(--color-warning-text);
-}
-.status svg { flex: none; margin-top: 0.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.status strong { color: var(--color-warning-text); }
-.status span { color: var(--color-text); font-size: 0.9375rem; }
-
 /* Footer */
 .site-footer { border-top: 1px solid var(--color-border); padding: 2.5rem 0; }
 .foot {

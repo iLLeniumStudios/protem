@@ -110,8 +110,6 @@ spec:
 
     A hub cluster holds the rules (`AccessProfile`) and the requests (`AccessRequest`) as custom resources. An agent on each target cluster turns approved requests into ordinary RoleBindings and removes them when they expire, even while the hub is unreachable.
 
-    **Status:** alpha. The API is `v1alpha1` and may change, there has been no independent security review, and it has only been run on kind and k3d. Do not put it in front of production clusters yet.
-
     ### What gets installed
 
     The operator on the hub, with its web UI and API on port 8080, the five custom resource definitions, and the RBAC the operator needs. It may bind only the `view` and `edit` roles on the hub itself. The admission policy that checks requests created with `kubectl` is not part of this bundle: see [How to install with OLM](https://github.com/iLLeniumStudios/protem/blob/main/docs/guides/how-to-install-with-olm.md).

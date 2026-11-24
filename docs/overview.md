@@ -18,10 +18,6 @@ Teams running more than one Kubernetes cluster who want a paper trail and a time
 
 Protem is not a replacement for everyday RBAC: most people should hold the access their job needs, continuously, through ordinary RBAC. It is not a session broker — it does not proxy, record or replay `kubectl` sessions, and it cannot end a `kubectl exec` or port-forward that is already open. Use it for the exceptions: incident response and rare elevated tasks, not for the access someone needs every day.
 
-## Status
-
-**Note:** Protem is alpha software. Its API is `v1alpha1` and may change, it has had no independent security review, and it has only been run on kind and k3d, not on a managed Kubernetes service or in production. Decide for yourself whether that is acceptable for your use before relying on it.
-
 ## Where to go next
 
 - [Getting started: your first request](getting-started/first-request.md) — a tutorial from a clone of the repository to a granted, approved and expired request.

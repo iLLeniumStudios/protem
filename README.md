@@ -30,9 +30,6 @@
   <a href="#get-involved"><b>Get involved</b></a>
 </p>
 
-> [!WARNING]
-> Early software. The API is `v1alpha1` and may change, there has been no independent security review, and it has only been run on kind and k3d. Do not put it in front of production clusters yet.
-
 ## Getting started
 
 - [Your first request](docs/getting-started/first-request.md): from an empty cluster to a granted request you watch expire
