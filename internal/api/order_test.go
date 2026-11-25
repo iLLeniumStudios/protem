@@ -90,7 +90,10 @@ func TestListRoutesReturnTheSameOrderHoweverTheStoreOrdersItems(t *testing.T) {
 }
 
 func TestRequestsCreatedInTheSameMillisecondAllSucceed(t *testing.T) {
-	profile := &protemv1alpha1.AccessProfile{ObjectMeta: metav1.ObjectMeta{Namespace: "team", Name: "p"}}
+	profile := &protemv1alpha1.AccessProfile{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team", Name: "p"},
+		Spec:       protemv1alpha1.AccessProfileSpec{Requesters: protemv1alpha1.ProfileRequesters{Groups: []string{devsGroup}}},
+	}
 	c := fake.NewClientBuilder().WithScheme(setupTestScheme(t)).WithObjects(profile).Build()
 	s, err := NewServer(c, ServerOptions{Addr: "127.0.0.1:0", DevAuth: true})
 	if err != nil {
@@ -114,7 +117,10 @@ func TestRequestsCreatedInTheSameMillisecondAllSucceed(t *testing.T) {
 }
 
 func TestRequestingAProfileAlreadyWaitedForIsRefused(t *testing.T) {
-	profile := &protemv1alpha1.AccessProfile{ObjectMeta: metav1.ObjectMeta{Namespace: "team", Name: "p"}}
+	profile := &protemv1alpha1.AccessProfile{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team", Name: "p"},
+		Spec:       protemv1alpha1.AccessProfileSpec{Requesters: protemv1alpha1.ProfileRequesters{Groups: []string{devsGroup, sreLeadsGroup}}},
+	}
 	c := fake.NewClientBuilder().WithScheme(setupTestScheme(t)).WithObjects(profile).Build()
 	s, err := NewServer(c, ServerOptions{Addr: "127.0.0.1:0", DevAuth: true})
 	if err != nil {
@@ -139,5 +145,39 @@ func TestRequestingAProfileAlreadyWaitedForIsRefused(t *testing.T) {
 	}
 	if w := send(bobEmail, `{"profileRef":"p","reason":"mine","targetClusters":["prod"]}`); w.Code != http.StatusCreated {
 		t.Errorf("someone else's request = %d: %s, want 201", w.Code, w.Body.String())
+	}
+}
+
+// The controller rejects a request its profile does not allow; the API must not accept it first.
+func TestCreateRequestIsRefusedForSomeoneTheProfileDoesNotList(t *testing.T) {
+	profile := &protemv1alpha1.AccessProfile{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "team", Name: "p"},
+		Spec:       protemv1alpha1.AccessProfileSpec{Requesters: protemv1alpha1.ProfileRequesters{Groups: []string{sreLeadsGroup}}},
+	}
+	c := fake.NewClientBuilder().WithScheme(setupTestScheme(t)).WithObjects(profile).Build()
+	s, err := NewServer(c, ServerOptions{Addr: "127.0.0.1:0", DevAuth: true})
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	send := func(user, profile string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(http.MethodPost, "/api/namespaces/team/requests", strings.NewReader(`{"profileRef":"`+profile+`","reason":"x"}`))
+		r.Header.Set("X-Test-User", user)
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		s.Handler().ServeHTTP(w, r)
+		return w
+	}
+	if w := send(aliceEmail, "p"); w.Code != http.StatusForbidden {
+		t.Errorf("alice (devs) requesting an sre-leads profile = %d: %s, want 403", w.Code, w.Body.String())
+	}
+	if w := send(bobEmail, "p"); w.Code != http.StatusCreated {
+		t.Errorf("bob (sre-leads) = %d: %s, want 201", w.Code, w.Body.String())
+	}
+	if w := send(bobEmail, "nope"); w.Code != http.StatusNotFound {
+		t.Errorf("a profile that does not exist = %d: %s, want 404", w.Code, w.Body.String())
+	}
+	var list protemv1alpha1.AccessRequestList
+	if err := c.List(context.Background(), &list); err != nil || len(list.Items) != 1 {
+		t.Errorf("stored %d requests (err %v), want only bob's", len(list.Items), err)
 	}
 }

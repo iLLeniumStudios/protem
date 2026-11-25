@@ -157,22 +157,14 @@ func TestEscalation_3_2_SpoofedRequesterIdentityOverwritten(t *testing.T) {
 	w := httptest.NewRecorder()
 	server.Mux.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201 Created, got %d: %s", w.Code, w.Body.String())
+	// Her real groups do not include security-team, so the request is refused, and nothing is stored
+	// that carries the group she claimed.
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for a profile her authenticated groups do not allow, got %d: %s", w.Code, w.Body.String())
 	}
-
-	var view RequestView
-	_ = json.NewDecoder(w.Body).Decode(&view)
-	var created protemv1alpha1.AccessRequest
-	if err := fakeClient.Get(context.Background(), client.ObjectKey{Namespace: view.Namespace, Name: view.Name}, &created); err != nil {
-		t.Fatalf("failed to get created request: %v", err)
-	}
-
-	// Groups MUST be stamped from authenticated Alice (devs), NOT spoofed security-team!
-	for _, g := range created.Spec.Requester.Groups {
-		if g == securityTeamGroup {
-			t.Fatalf("VULNERABILITY §3.2: Created request accepted client-supplied spoofed group 'security-team'!")
-		}
+	var stored protemv1alpha1.AccessRequestList
+	if err := fakeClient.List(context.Background(), &stored); err != nil || len(stored.Items) != 0 {
+		t.Fatalf("VULNERABILITY §3.2: %d requests stored (err %v) for a spoofed group", len(stored.Items), err)
 	}
 }
 

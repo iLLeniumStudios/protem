@@ -547,6 +547,17 @@ func (s *Server) handleCreateRequest(w http.ResponseWriter, r *http.Request, use
 		return
 	}
 
+	// The controller makes the same check and has the last word; this one answers at once.
+	var profile protemv1alpha1.AccessProfile
+	if err := s.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: payload.ProfileRef}, &profile); err != nil {
+		s.writeKubeError(w, err)
+		return
+	}
+	if !approval.CanRequest(toPerson(user), &profile) {
+		s.writeJSON(w, http.StatusForbidden, map[string]string{errorKey: "You are not one of the people who may request this profile."})
+		return
+	}
+
 	var dur *metav1.Duration
 	if payload.Duration != "" {
 		if parsed, err := time.ParseDuration(payload.Duration); err == nil {
