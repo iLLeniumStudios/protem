@@ -404,7 +404,10 @@ site: $(SITE_VENV)/bin/mkdocs $(MERMAID_DIR) ## Build the website into _site/: t
 	mkdir -p _site/docs/assets/javascripts
 	cp $(MERMAID_DIR)/dist/mermaid.min.js _site/docs/assets/javascripts/mermaid.min.js
 	cp $(MERMAID_DIR)/LICENSE _site/docs/assets/javascripts/LICENSE-mermaid.txt
-	if [ -d site/landing ]; then cp -R site/landing/. _site/; fi
+	# The CDN in front of the site caches styles.css for hours, so its URL carries a hash of its content.
+	if [ -d site/landing ]; then cp -R site/landing/. _site/ && \
+		v=$$(shasum -a 256 _site/styles.css | cut -c1-10) && \
+		sed -i.bak "s|href=\"styles.css\"|href=\"styles.css?v=$$v\"|" _site/index.html && rm _site/index.html.bak; fi
 	cp site/docs/404.html _site/404.html
 	echo protem.dev > _site/CNAME
 	touch _site/.nojekyll
