@@ -1,5 +1,5 @@
 site_name: Protem
-site_description: Temporary Kubernetes roles, requested, approved and removed on their own.
+site_description: Just-in-time privileged access management for Kubernetes, with time-bound, approval-gated access across every cluster.
 site_url: https://protem.dev/docs/
 repo_url: https://github.com/iLLeniumStudios/protem
 repo_name: iLLeniumStudios/protem

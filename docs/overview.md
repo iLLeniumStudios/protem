@@ -2,7 +2,7 @@
 
 What Protem is, who it is for, and when to use it.
 
-Protem is a Kubernetes operator with a web UI that grants temporary Kubernetes roles. Someone requests a role for a few hours, an approver decides (or the profile grants it at once), and the access is removed on its own when the time is up. A hub cluster holds the rules and the requests as custom resources; an agent on each target cluster turns an approved request into an ordinary `RoleBinding` and removes it when it expires.
+Protem is just-in-time privileged access management for Kubernetes: an operator with a web UI that replaces standing admin rights with time-bound, approval-gated roles. An engineer requests a role for a few hours, an approver decides (or the profile grants it at once), and the access is revoked automatically when it expires. A hub cluster holds the rules and the requests as custom resources; an agent on each target cluster turns an approved request into an ordinary `RoleBinding` and removes it when it expires.
 
 ![People request and approve, Git holds the profiles, a hub cluster stores everything as Kubernetes resources, and an agent on each cluster pulls its grants and removes access when it ends](architecture/images/poster.png)
 

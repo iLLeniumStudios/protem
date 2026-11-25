@@ -1,6 +1,6 @@
 apiVersion: v2
 name: protem
-description: Temporary Kubernetes access across many clusters, requested, approved and removed on its own when the time is up.
+description: Just-in-time privileged access management for Kubernetes, with time-bound, approval-gated access across every cluster.
 type: application
 version: 0.1.0
 appVersion: "0.1.0"

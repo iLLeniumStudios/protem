@@ -7,7 +7,7 @@ metadata:
     categories: Security
     containerImage: ghcr.io/illeniumstudios/protem
     operators.operatorframework.io/internal-objects: '["accessgrants.protem.dev","clustergrants.protem.dev"]'
-    description: Temporary Kubernetes access across many clusters, removed on its own when the time is up.
+    description: Just-in-time privileged access management for Kubernetes, with time-bound, approval-gated access across every cluster.
     repository: https://github.com/iLLeniumStudios/protem
     support: iLLeniumStudios
   name: protem.v0.0.0
@@ -106,7 +106,7 @@ spec:
         - urn:alm:descriptor:io.kubernetes.conditions
       version: v1alpha1
   description: |
-    Protem gives people temporary Kubernetes access across many clusters. A person requests a role for a few hours, an approver decides, and the access is removed on its own when the time is up.
+    Protem is just-in-time privileged access management for Kubernetes. It replaces standing admin rights with time-bound, approval-gated access across a fleet of clusters: engineers request a role, approvers see exactly what it grants, and every grant is audited and revoked automatically when it expires.
 
     A hub cluster holds the rules (`AccessProfile`) and the requests (`AccessRequest`) as custom resources. An agent on each target cluster turns approved requests into ordinary RoleBindings and removes them when they expire, even while the hub is unreachable.
 

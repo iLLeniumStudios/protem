@@ -13,7 +13,7 @@
 
 # Protem
 
-**Protem** gives people temporary Kubernetes access across many clusters. Someone requests a role for a few hours, an approver decides, and the access is removed on its own when the time is up.
+**Protem** is just-in-time privileged access management for Kubernetes. It replaces standing admin rights with time-bound, approval-gated access across a fleet of clusters: engineers request a role, approvers see exactly what it grants, and every grant is audited and revoked automatically when it expires.
 
 <div align="center">
   <picture>
