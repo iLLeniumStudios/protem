@@ -53,12 +53,13 @@ type RevocationDetails struct {
 }
 
 // ClusterBindingStatePhase defines the phase of a binding on a specific cluster.
-// +kubebuilder:validation:Enum=Pending;Active;Revoked;Failed
+// +kubebuilder:validation:Enum=Pending;Active;Expired;Revoked;Failed
 type ClusterBindingStatePhase string
 
 const (
 	ClusterBindingStatePending ClusterBindingStatePhase = "Pending"
 	ClusterBindingStateActive  ClusterBindingStatePhase = "Active"
+	ClusterBindingStateExpired ClusterBindingStatePhase = "Expired"
 	ClusterBindingStateRevoked ClusterBindingStatePhase = "Revoked"
 	ClusterBindingStateFailed  ClusterBindingStatePhase = "Failed"
 )
@@ -66,7 +67,7 @@ const (
 // ClusterBindingState tracks the status of bindings on a specific cluster.
 type ClusterBindingState struct {
 	ClusterName string                   `json:"clusterName"`
-	State       ClusterBindingStatePhase `json:"state"` // Active | Expired | Revoked | Failed
+	State       ClusterBindingStatePhase `json:"state"`
 	// +optional
 	Bindings []ManagedBindingRef `json:"bindings,omitempty"`
 	// +optional

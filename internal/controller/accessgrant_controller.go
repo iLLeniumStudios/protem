@@ -109,7 +109,8 @@ func (r *AccessGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if Revoked (presence of Revocation field)
 	if grant.Spec.Revocation != nil {
-		if grant.Status.Phase != protemv1alpha1.GrantPhaseRevoked {
+		changed := grant.Status.Phase != protemv1alpha1.GrantPhaseRevoked
+		if changed {
 			log.Info("Grant has been revoked, removing RBAC bindings", "revokedBy", grant.Spec.Revocation.By)
 			if err := r.cleanupBindings(ctx, &grant); err != nil {
 				return ctrl.Result{}, err
@@ -117,7 +118,16 @@ func (r *AccessGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			r.cleanupClusterGrants(ctx, &grant)
 			grant.Status.Phase = protemv1alpha1.GrantPhaseRevoked
 			grant.Status.ManagedBindings = nil
-			return ctrl.Result{}, r.Status().Update(ctx, &grant)
+		}
+		states, waiting := r.revokedClusterStates(ctx, &grant)
+		if changed || !equality.Semantic.DeepEqual(grant.Status.Clusters, states) {
+			grant.Status.Clusters = states
+			if err := r.Status().Update(ctx, &grant); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		if waiting {
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 		return ctrl.Result{}, nil
 	}
@@ -133,6 +143,9 @@ func (r *AccessGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			r.cleanupClusterGrants(ctx, &grant)
 			grant.Status.Phase = protemv1alpha1.GrantPhaseExpired
 			grant.Status.ManagedBindings = nil
+			for i, c := range grant.Status.Clusters {
+				grant.Status.Clusters[i] = protemv1alpha1.ClusterBindingState{ClusterName: c.ClusterName, State: protemv1alpha1.ClusterBindingStateExpired, LastTransitionTime: metav1.NewTime(now)}
+			}
 			return ctrl.Result{}, r.Status().Update(ctx, &grant)
 		}
 		return ctrl.Result{}, nil
@@ -332,4 +345,27 @@ func (r *AccessGrantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&rbacv1.ClusterRoleBinding{}, handler.EnqueueRequestsFromMapFunc(grantForBinding)).
 		Named("accessgrant").
 		Complete(r)
+}
+
+// revokedClusterStates reports a cluster of a revoked grant as Revoked once nothing can still be
+// bound there: on the hub at once, on a target cluster when its agent says so or the grant's own
+// time is up, which the agent enforces without the hub. It also reports whether any is still open.
+func (r *AccessGrantReconciler) revokedClusterStates(ctx context.Context, grant *protemv1alpha1.AccessGrant) ([]protemv1alpha1.ClusterBindingState, bool) {
+	expired := !time.Now().Before(grant.Spec.ExpiresAt.Time)
+	states := make([]protemv1alpha1.ClusterBindingState, 0, len(grant.Status.Clusters))
+	waiting := false
+	for _, c := range grant.Status.Clusters {
+		done := expired || c.ClusterName == r.HubClusterName
+		if !done {
+			var cg protemv1alpha1.ClusterGrant
+			err := r.Get(ctx, client.ObjectKey{Namespace: fleet.ClusterNamespace(c.ClusterName), Name: fleet.GrantKey(grant.Namespace, grant.Name)}, &cg)
+			done = apierrors.IsNotFound(err) || (err == nil && cg.Status.Phase == protemv1alpha1.ClusterGrantPhaseRevoked)
+		}
+		if done && c.State != protemv1alpha1.ClusterBindingStateRevoked {
+			c = protemv1alpha1.ClusterBindingState{ClusterName: c.ClusterName, State: protemv1alpha1.ClusterBindingStateRevoked, LastTransitionTime: metav1.Now()}
+		}
+		waiting = waiting || !done
+		states = append(states, c)
+	}
+	return states, waiting
 }

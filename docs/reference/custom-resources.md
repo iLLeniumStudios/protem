@@ -41,7 +41,7 @@ AccessGrant represents an active, time-bound access lease for a user.
 | `status.clusters[].clusterName` | string | yes |  |  |  |  |
 | `status.clusters[].lastTransitionTime` | string (date-time) | no |  |  |  |  |
 | `status.clusters[].message` | string | no |  |  |  |  |
-| `status.clusters[].state` | string | yes |  | `"Pending"`, `"Active"`, `"Revoked"`, `"Failed"` |  | ClusterBindingStatePhase defines the phase of a binding on a specific cluster. |
+| `status.clusters[].state` | string | yes |  | `"Pending"`, `"Active"`, `"Expired"`, `"Revoked"`, `"Failed"` |  | ClusterBindingStatePhase defines the phase of a binding on a specific cluster. |
 | `status.conditions` | []object | no |  |  |  | Conditions represent observations of the grant state |
 | `status.conditions[].lastTransitionTime` | string (date-time) | yes |  |  |  | lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed. If that is not known, then using the time when the API field changed is acceptable. |
 | `status.conditions[].message` | string | yes |  |  | max length 32768 | message is a human readable message indicating details about the transition. This may be an empty string. |

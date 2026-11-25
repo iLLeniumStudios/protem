@@ -775,3 +775,72 @@ func TestAccessGrantReconciler_RemovesAClusterGrantLeftForTheHub(t *testing.T) {
 		t.Errorf("the hub's leftover ClusterGrant is still there (err %v)", err)
 	}
 }
+
+// A grant that has ended must not go on showing its clusters as Active. For a revocation the hub
+// knows a target cluster is done only when its agent says so, or once the grant's own time is up.
+func TestAccessGrantReconciler_EndedGrantsUpdateTheirClusterStates(t *testing.T) {
+	scheme := setupTestScheme(t)
+	active := []protemv1alpha1.ClusterBindingState{
+		{ClusterName: hubClusterName, State: protemv1alpha1.ClusterBindingStateActive, Bindings: []protemv1alpha1.ManagedBindingRef{{Kind: "RoleBinding", Namespace: defaultNs, Name: "b"}}},
+		{ClusterName: "prod-spoke-1", State: protemv1alpha1.ClusterBindingStateActive, Message: "Applied successfully by protem-agent"},
+	}
+	states := func(t *testing.T, grant *protemv1alpha1.AccessGrant, objs ...client.Object) ([]protemv1alpha1.ClusterBindingState, ctrl.Result) {
+		t.Helper()
+		grant.Status = protemv1alpha1.AccessGrantStatus{Phase: protemv1alpha1.GrantPhaseActive, Clusters: active}
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(append(objs, grant)...).WithStatusSubresource(grant).Build()
+		r := &AccessGrantReconciler{Client: c, Scheme: scheme, HubClusterName: hubClusterName}
+		var res ctrl.Result
+		for range 2 {
+			var err error
+			if res, err = r.Reconcile(context.Background(), ctrl.Request{NamespacedName: client.ObjectKeyFromObject(grant)}); err != nil {
+				t.Fatalf("reconcile failed: %v", err)
+			}
+		}
+		var got protemv1alpha1.AccessGrant
+		if err := c.Get(context.Background(), client.ObjectKeyFromObject(grant), &got); err != nil {
+			t.Fatalf("failed to get grant: %v", err)
+		}
+		return got.Status.Clusters, res
+	}
+	want := func(t *testing.T, got []protemv1alpha1.ClusterBindingState, hub, target protemv1alpha1.ClusterBindingStatePhase) {
+		t.Helper()
+		if len(got) != 2 || got[0].State != hub || got[1].State != target {
+			t.Fatalf("cluster states = %+v, want %s on the hub and %s on the target", got, hub, target)
+		}
+	}
+	clusterGrant := func(name string, phase protemv1alpha1.ClusterGrantPhase) *protemv1alpha1.ClusterGrant {
+		return &protemv1alpha1.ClusterGrant{
+			ObjectMeta: metav1.ObjectMeta{Namespace: fleet.ClusterNamespace("prod-spoke-1"), Name: fleet.GrantKey(defaultNs, name)},
+			Status:     protemv1alpha1.ClusterGrantStatus{Phase: phase},
+		}
+	}
+	revocation := &protemv1alpha1.RevocationDetails{By: "admin", At: metav1.Now(), Reason: "done"}
+
+	t.Run("expired", func(t *testing.T) {
+		grant := hubAndTargetGrant("ended-expired")
+		grant.Spec.ExpiresAt = metav1.NewTime(time.Now().Add(-time.Minute))
+		got, _ := states(t, grant)
+		want(t, got, protemv1alpha1.ClusterBindingStateExpired, protemv1alpha1.ClusterBindingStateExpired)
+		if len(got[0].Bindings) != 0 {
+			t.Errorf("an expired grant still lists bindings: %+v", got[0].Bindings)
+		}
+	})
+	t.Run("revoked, the agent has not removed the binding yet", func(t *testing.T) {
+		grant := hubAndTargetGrant("ended-waiting")
+		grant.Spec.Revocation = revocation
+		got, res := states(t, grant, clusterGrant("ended-waiting", protemv1alpha1.ClusterGrantPhaseActive))
+		want(t, got, protemv1alpha1.ClusterBindingStateRevoked, protemv1alpha1.ClusterBindingStateActive)
+		if res.RequeueAfter <= 0 {
+			t.Error("expected a requeue to see the agent's answer")
+		}
+	})
+	t.Run("revoked, the agent has removed the binding", func(t *testing.T) {
+		grant := hubAndTargetGrant("ended-revoked")
+		grant.Spec.Revocation = revocation
+		got, res := states(t, grant, clusterGrant("ended-revoked", protemv1alpha1.ClusterGrantPhaseRevoked))
+		want(t, got, protemv1alpha1.ClusterBindingStateRevoked, protemv1alpha1.ClusterBindingStateRevoked)
+		if res.RequeueAfter != 0 {
+			t.Errorf("nothing left to wait for, but requeued after %s", res.RequeueAfter)
+		}
+	})
+}

@@ -191,6 +191,7 @@ spec:
                       enum:
                       - Pending
                       - Active
+                      - Expired
                       - Revoked
                       - Failed
                       type: string
