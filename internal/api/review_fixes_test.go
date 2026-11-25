@@ -126,6 +126,11 @@ func TestTokenClaimsBecomeAUserThatCannotCollideOrClaimSystemGroups(t *testing.T
 			want:   UserInfo{Email: "u1", Username: "u1", Groups: []string{}},
 		},
 		{
+			name:   "an email and a subject but no username, as Google issues: the username is the email, not an opaque id",
+			claims: tokenClaims{Email: "a@x.io", Sub: "110540357520890786310"},
+			want:   UserInfo{Email: "a@x.io", Username: "a@x.io", Groups: []string{}},
+		},
+		{
 			name:   "system: groups from an identity provider are dropped",
 			claims: tokenClaims{Email: "a@x.io", Groups: []string{"system:masters", "devs", "system:authenticated"}},
 			want:   UserInfo{Email: "a@x.io", Username: "a@x.io", Groups: []string{"devs"}},

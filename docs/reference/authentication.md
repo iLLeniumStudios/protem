@@ -19,9 +19,9 @@ Verification is done by [go-oidc](https://github.com/coreos/go-oidc) (`internal/
 
 | Claim | Read as | Order of preference | Notes |
 |---|---|---|---|
-| `email` | email | 1st for email, 3rd for username | |
+| `email` | email, username | 1st for email, 2nd for username | Before 0.1.6 it came after `sub` for the username |
 | `preferred_username` | username, email | 1st for username, 2nd for email | |
-| `sub` | username, email | 2nd for username, 3rd for email | |
+| `sub` | username, email | 3rd for both | |
 | `groups` | groups | only source of groups | A JSON array of strings. Entries starting with `system:` are dropped |
 | `realm_access.roles` | roles | only source of roles | Keycloak's realm roles. Shown in `GET /api/me`; no effect on what a person may request, approve or administer |
 | `exp` | expiry | | Checked during verification |

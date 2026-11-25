@@ -154,7 +154,7 @@ const systemPrefix = "system:"
 
 func (c tokenClaims) user() (UserInfo, error) {
 	email := cmp.Or(c.Email, c.PreferredUsername, c.Sub)
-	username := cmp.Or(c.PreferredUsername, c.Sub, c.Email)
+	username := cmp.Or(c.PreferredUsername, c.Email, c.Sub)
 	if email == "" || strings.HasPrefix(email, systemPrefix) || strings.HasPrefix(username, systemPrefix) {
 		return UserInfo{}, ErrUnauthorized
 	}
