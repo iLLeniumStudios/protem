@@ -78,6 +78,14 @@ test('clearing a subject sends an empty one, meaning the hub default', () => {
   expect(settingsChange(unset, { ...settingsForm(unset), subject: '' })).toEqual({ payload: {}, errors: {} });
 });
 
+test('the hub cluster never sends a subject, whatever the form holds', () => {
+  const hub = cluster({ agent: 'none' });
+  const form = { ...settingsForm(hub), subject: '{{.Username}}', paused: true };
+  expect(settingsChange(hub, form)).toEqual({ payload: { paused: true }, errors: {} });
+  expect(settingsChange(hub, { ...settingsForm(hub), subject: 'admin' })).toEqual({ payload: {}, errors: {} });
+  expect(settingsChange(cluster({ agent: 'connected' }), form).payload).toEqual({ paused: true, subject: '{{.Username}}' });
+});
+
 test('the bound name follows the server: empty is the email, placeholders filled, literal text kept', () => {
   const alice = { email: 'alice@company.com', username: 'alice' };
   expect(boundAs('', alice)).toBe('alice@company.com');

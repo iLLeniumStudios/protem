@@ -4,7 +4,7 @@ import { errorMessage } from '../../api';
 import { useData } from '../../app/data';
 import type { ClusterView } from '../../generated/views';
 import { Button, Checkbox, Dialog, ErrorBanner, Field, Identifier, Input, useToast } from '../../components/ui';
-import { IdList } from '../access/parts';
+import { Fact, Facts, IdList } from '../access/parts';
 import { KeyValueRows } from '../profiles/KeyValueRows';
 import { boundAs, settingsChange, settingsForm, type SettingsForm } from './settings';
 
@@ -89,35 +89,44 @@ export function ClusterSettings({ cluster, open, onOpenChange }: { cluster: Clus
             label="Paused"
             description="New requests cannot target a paused cluster. Access already live keeps running."
           />
-          <Field
-            label="Subject"
-            htmlFor={`${ids}-subject`}
-            hint={
-              <>
-                The username each person gets on this cluster. It must match how this cluster's API server names users. If
-                set, it must include <code className="font-mono">{'{{.Email}}'}</code> or{' '}
-                <code className="font-mono">{'{{.Username}}'}</code>, for example{' '}
-                <code className="font-mono">{'oidc:{{.Email}}'}</code>. Leave empty to use the hub's default.
-              </>
-            }
-            error={shown.subject}
-          >
-            <Input
-              value={form.subject}
-              autoComplete="off"
-              spellCheck={false}
-              mono
-              onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-            />
-            <div className="flex min-w-0 flex-col gap-1 text-caption text-text-secondary">
-              <p className="min-w-0">
-                You would be bound as <Identifier className="text-text">{boundName}</Identifier>
-              </p>
-              <p>
-                Run <code className="font-mono">kubectl auth whoami</code> on this cluster; it should print this name.
-              </p>
-            </div>
-          </Field>
+          {cluster.agent === 'none' ? (
+            <Facts>
+              <Fact label="Subject" wide>
+                Set by the operator for the hub cluster (Helm value <code className="font-mono">subjectTemplate</code>). You
+                would be bound as <Identifier>{cluster.boundAs}</Identifier>.
+              </Fact>
+            </Facts>
+          ) : (
+            <Field
+              label="Subject"
+              htmlFor={`${ids}-subject`}
+              hint={
+                <>
+                  The username each person gets on this cluster. It must match how this cluster's API server names users. If
+                  set, it must include <code className="font-mono">{'{{.Email}}'}</code> or{' '}
+                  <code className="font-mono">{'{{.Username}}'}</code>, for example{' '}
+                  <code className="font-mono">{'oidc:{{.Email}}'}</code>. Leave empty to use the hub's default.
+                </>
+              }
+              error={shown.subject}
+            >
+              <Input
+                value={form.subject}
+                autoComplete="off"
+                spellCheck={false}
+                mono
+                onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+              />
+              <div className="flex min-w-0 flex-col gap-1 text-caption text-text-secondary">
+                <p className="min-w-0">
+                  You would be bound as <Identifier className="text-text">{boundName}</Identifier>
+                </p>
+                <p>
+                  Run <code className="font-mono">kubectl auth whoami</code> on this cluster; it should print this name.
+                </p>
+              </div>
+            </Field>
+          )}
           <KeyValueRows
             id={`${ids}-labels`}
             legend="Labels"

@@ -57,7 +57,8 @@ export function settingsChange(
   if (form.paused !== cluster.paused) payload.paused = form.paused;
 
   const subject = form.subject.trim();
-  if (subject !== (cluster.subject ?? '')) {
+  // The hub's own cluster binds with the operator's --subject-template; the server refuses a subject for it.
+  if (cluster.agent !== 'none' && subject !== (cluster.subject ?? '')) {
     if (!subject || subject.includes('{{.Email}}') || subject.includes('{{.Username}}')) payload.subject = subject;
     else errors.subject = 'Include {{.Email}} or {{.Username}}, or leave it empty. A fixed subject would give every user the same identity.';
   }
