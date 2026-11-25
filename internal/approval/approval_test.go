@@ -55,6 +55,10 @@ func TestSamePerson(t *testing.T) {
 		{"empty usernames do not match", approval.Person{Email: "a@x"}, approval.Person{Email: "b@x"}, false},
 		{"all empty", approval.Person{}, approval.Person{}, false},
 		{"different", alice, bob, false},
+		// A request created with kubectl may name only the username, and the API server's name for a
+		// person can be what their login calls the email (GKE, or an API server on the email claim).
+		{"a missing email stands for the username", approval.Person{Username: aliceEmail}, approval.Person{Username: "116390735287791843369", Email: aliceEmail}, true},
+		{"a username is not an email while its own email is set", approval.Person{Username: aliceEmail, Email: "other@x"}, approval.Person{Username: "n", Email: aliceEmail}, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

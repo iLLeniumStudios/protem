@@ -2,6 +2,7 @@
 package approval
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"slices"
@@ -24,9 +25,12 @@ var (
 	ErrAlreadyApproved = errors.New("person has already approved every rule they are eligible for")
 )
 
-// SamePerson reports whether a and b share a non-empty username or a non-empty email.
+// SamePerson reports whether a and b share a non-empty username or email. A missing email stands
+// for the username: a request created with kubectl may name only the name the API server gave its
+// caller, and that name can be the address the same person's login carries as their email.
 func SamePerson(a, b Person) bool {
-	return (a.Username != "" && a.Username == b.Username) || (a.Email != "" && a.Email == b.Email)
+	aEmail, bEmail := cmp.Or(a.Email, a.Username), cmp.Or(b.Email, b.Username)
+	return (a.Username != "" && a.Username == b.Username) || (aEmail != "" && aEmail == bEmail)
 }
 
 // CanRequest reports whether p is one of the profile's requester groups or users.

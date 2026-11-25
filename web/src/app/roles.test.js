@@ -37,6 +37,8 @@ test('a requester is me when the username or the email matches, never on two emp
   expect(isMe(me, { username: 'bob', email: 'bob@company.com' })).toBe(false);
   expect(isMe({ username: '', email: '' }, { username: '', email: '' })).toBe(false);
   expect(isMe(null, { username: 'alice', email: 'alice@company.com' })).toBe(false);
+  expect(isMe({ username: '1163', email: 'alice@company.com' }, { username: 'alice@company.com', email: '' })).toBe(true);
+  expect(isMe({ username: '1163', email: 'alice@company.com' }, { username: 'alice@company.com', email: 'other@company.com' })).toBe(false);
 });
 
 test('the five administration paths and their children belong to Administration, everything else to My access', () => {

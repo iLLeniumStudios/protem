@@ -7,10 +7,11 @@ export interface Viewer {
   profiles: Pick<ProfileView, 'canApprove'>[];
 }
 
-/** Same person as the server decides it: a matching non-empty username or a matching non-empty email. */
+/** Same person as the server decides it: a matching non-empty username or email, where a missing email stands for the username. */
 export function isMe(me: Pick<UserInfo, 'username' | 'email'> | null | undefined, who: RequesterView): boolean {
   if (!me) return false;
-  return (Boolean(me.username) && me.username === who.username) || (Boolean(me.email) && me.email === who.email);
+  const mine = me.email || me.username;
+  return (Boolean(me.username) && me.username === who.username) || (Boolean(mine) && mine === (who.email || who.username));
 }
 
 export function isAdmin(v: Viewer): boolean {
