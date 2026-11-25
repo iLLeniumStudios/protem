@@ -2,7 +2,7 @@
 {{- $name := printf "%s-requester-identity" (include "protem.fullname" .) }}
 # A request created with kubectl must name its caller as the requester, unless RBAC allows the
 # caller the verb "delegate" on accessrequests in that namespace (the operator holds it, to create
-# requests for whoever is logged in to the UI). See docs/login.md.
+# requests for whoever is logged in to the UI). Kept in step with config/admission by a test.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -20,12 +20,26 @@ spec:
   matchConditions:
   - name: may-not-delegate
     expression: "!authorizer.group('protem.dev').resource('accessrequests').namespace(object.metadata.namespace).check('delegate').allowed()"
+  variables:
+  - name: usernamePrefix
+    expression: {{ printf "'%s'" (.Values.admissionPolicy.usernamePrefix | default "") | quote }}
+  - name: groupsPrefix
+    expression: {{ printf "'%s'" (.Values.admissionPolicy.groupsPrefix | default "") | quote }}
+  - name: username
+    expression: "request.userInfo.username.startsWith(variables.usernamePrefix) ? request.userInfo.username.substring(size(variables.usernamePrefix)) : ''"
+  # With a prefix removed, a name from the identity provider must not turn into one of Kubernetes' own.
+  - name: groups
+    expression: "request.userInfo.groups.filter(g, g.startsWith(variables.groupsPrefix)).map(g, g.substring(size(variables.groupsPrefix))).filter(g, variables.groupsPrefix == '' || !g.startsWith('system:'))"
   validations:
-  - expression: "object.spec.requester.username == request.userInfo.username"
-    messageExpression: "'spec.requester.username must be your own username, ' + request.userInfo.username"
-  - expression: "object.spec.requester.email == '' || object.spec.requester.email == request.userInfo.username"
-    messageExpression: "'spec.requester.email must be empty or ' + request.userInfo.username"
-  - expression: "!has(object.spec.requester.groups) || object.spec.requester.groups.all(g, g in request.userInfo.groups)"
+  - expression: "variables.username != ''"
+    messageExpression: "'only users whose name starts with ' + variables.usernamePrefix + ' may create requests in their own name'"
+  - expression: "variables.usernamePrefix == '' || !variables.username.startsWith('system:')"
+    message: "your user name without its prefix may not start with system:"
+  - expression: "object.spec.requester.username == variables.username"
+    messageExpression: "'spec.requester.username must be your own username, ' + variables.username"
+  - expression: "!has(object.spec.requester.email) || object.spec.requester.email == '' || object.spec.requester.email == variables.username"
+    messageExpression: "'spec.requester.email must be empty or ' + variables.username"
+  - expression: "!has(object.spec.requester.groups) || object.spec.requester.groups.all(g, g in variables.groups)"
     message: "spec.requester.groups may only list groups you belong to"
 ---
 apiVersion: admissionregistration.k8s.io/v1

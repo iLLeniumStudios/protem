@@ -8,6 +8,13 @@
 #   - spec.requester.email must be empty or equal to that username
 #   - every group in spec.requester.groups must be one of the caller's groups
 #
+# If the hub's API server puts a prefix on the user names and groups it reads from a login token
+# (its OIDC usernamePrefix and groupsPrefix, "oidc:" on many EKS clusters), set the two variables
+# below to those prefixes. The policy then compares without them, so a request created with
+# kubectl names the person exactly as a request created in the UI does. With a prefix set, only
+# callers whose name carries it may create requests in their own name, and only groups that carry
+# the group prefix count.
+#
 # A caller RBAC allows the verb "delegate" on accessrequests in the request's namespace may name
 # anyone: the operator holds it, because it creates requests on behalf of the person logged in
 # to the UI. Whoever holds that verb can request access in anyone's name.
@@ -26,12 +33,26 @@ spec:
   matchConditions:
   - name: may-not-delegate
     expression: "!authorizer.group('protem.dev').resource('accessrequests').namespace(object.metadata.namespace).check('delegate').allowed()"
+  variables:
+  - name: usernamePrefix
+    expression: "''"
+  - name: groupsPrefix
+    expression: "''"
+  - name: username
+    expression: "request.userInfo.username.startsWith(variables.usernamePrefix) ? request.userInfo.username.substring(size(variables.usernamePrefix)) : ''"
+  # With a prefix removed, a name from the identity provider must not turn into one of Kubernetes' own.
+  - name: groups
+    expression: "request.userInfo.groups.filter(g, g.startsWith(variables.groupsPrefix)).map(g, g.substring(size(variables.groupsPrefix))).filter(g, variables.groupsPrefix == '' || !g.startsWith('system:'))"
   validations:
-  - expression: "object.spec.requester.username == request.userInfo.username"
-    messageExpression: "'spec.requester.username must be your own username, ' + request.userInfo.username"
-  - expression: "object.spec.requester.email == '' || object.spec.requester.email == request.userInfo.username"
-    messageExpression: "'spec.requester.email must be empty or ' + request.userInfo.username"
-  - expression: "!has(object.spec.requester.groups) || object.spec.requester.groups.all(g, g in request.userInfo.groups)"
+  - expression: "variables.username != ''"
+    messageExpression: "'only users whose name starts with ' + variables.usernamePrefix + ' may create requests in their own name'"
+  - expression: "variables.usernamePrefix == '' || !variables.username.startsWith('system:')"
+    message: "your user name without its prefix may not start with system:"
+  - expression: "object.spec.requester.username == variables.username"
+    messageExpression: "'spec.requester.username must be your own username, ' + variables.username"
+  - expression: "!has(object.spec.requester.email) || object.spec.requester.email == '' || object.spec.requester.email == variables.username"
+    messageExpression: "'spec.requester.email must be empty or ' + variables.username"
+  - expression: "!has(object.spec.requester.groups) || object.spec.requester.groups.all(g, g in variables.groups)"
     message: "spec.requester.groups may only list groups you belong to"
 ---
 apiVersion: admissionregistration.k8s.io/v1

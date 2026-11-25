@@ -34,6 +34,13 @@
       "properties": {
         "scope": { "type": "string" }
       }
+    },
+    "admissionPolicy": {
+      "type": "object",
+      "properties": {
+        "usernamePrefix": { "type": "string", "pattern": "^[^'\\\\\\n\\r]*$" },
+        "groupsPrefix": { "type": "string", "pattern": "^[^'\\\\\\n\\r]*$" }
+      }
     }
   }
 }
