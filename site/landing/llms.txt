@@ -1,0 +1,46 @@
+# Protem
+
+> Protem is open-source just-in-time privileged access management for Kubernetes. People request a role for a few hours, an approver sees what the role allows, and an agent on each target cluster creates an ordinary RoleBinding and removes it when the time is up. One hub cluster serves many target clusters, and everything is a Kubernetes custom resource.
+
+Protem is a Kubernetes operator with a web UI, licensed Apache-2.0. Its API group is `protem.dev/v1alpha1`. It installs with Helm (`oci://ghcr.io/illeniumstudios/charts/protem`) or OLM, and needs Kubernetes 1.30 or later on the hub. It does not proxy or record `kubectl` sessions and cannot end an exec that is already open. It has been run on kind and k3d, and has had no independent security review.
+
+## Start here
+
+- [Overview](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/overview.md): what Protem is, who it is for, and when not to use it
+- [Concepts](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/architecture/concepts.md): the five custom resources, each with a real manifest
+- [Your first request](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/getting-started/first-request.md): tutorial from an empty cluster to a granted request that expires
+
+## Install and operate
+
+- [Install with Helm](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-install-with-helm.md)
+- [Install with OLM](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-install-with-olm.md)
+- [Set up login](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-set-up-login.md): OIDC through oauth2-proxy
+- [Connect a target cluster](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-connect-a-target-cluster.md)
+- [Audit log](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/operations/audit-log.md): one JSON line per event
+
+## Use
+
+- [Create a profile](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-create-a-profile.md)
+- [Require approval on some clusters](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-require-approval-on-some-clusters.md)
+- [Request access](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-request-access.md)
+- [Approve or reject a request](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-approve-or-reject-a-request.md)
+- [Revoke access](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/how-to-revoke-access.md)
+
+## How it works
+
+- [How it works](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/architecture/how-it-works.md): the components and the path of one request
+- [Hub and agents](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/architecture/hub-and-agents.md)
+- [Request and grant lifecycle](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/architecture/request-lifecycle.md)
+- [Security model](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/architecture/security-model.md): what each party can and cannot do
+
+## Reference
+
+- [Custom resources](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/reference/custom-resources.md): every field of every CRD
+- [Chart values](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/reference/chart-values.md)
+- [Operator flags](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/reference/operator-flags.md)
+- [Authentication](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/reference/authentication.md)
+
+## Optional
+
+- [README](https://raw.githubusercontent.com/iLLeniumStudios/protem/main/README.md): features, quick start and screenshots
+- [Source code](https://github.com/iLLeniumStudios/protem)
