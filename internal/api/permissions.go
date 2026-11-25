@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	protemv1alpha1 "github.com/iLLeniumStudios/protem/api/v1alpha1"
+	"github.com/iLLeniumStudios/protem/internal/binding"
 	"github.com/iLLeniumStudios/protem/internal/fleet"
 )
 
@@ -197,9 +198,30 @@ func (s *Server) handleGrantPermissions(w http.ResponseWriter, r *http.Request, 
 	views := make([]ClusterPermissionsView, 0, len(grant.Spec.Clusters))
 	for _, cluster := range grant.Spec.Clusters {
 		view := ClusterPermissionsView{Cluster: cluster}
+		// The operator binds on the hub itself; no agent writes a ClusterGrant for it.
+		onHub := cluster == s.HubClusterName
 		var cg protemv1alpha1.ClusterGrant
-		err := s.Client.Get(ctx, client.ObjectKey{Namespace: fleet.ClusterNamespace(cluster), Name: fleet.GrantKey(grant.Namespace, grant.Name)}, &cg)
+		var err error
+		if !onHub {
+			err = s.Client.Get(ctx, client.ObjectKey{Namespace: fleet.ClusterNamespace(cluster), Name: fleet.GrantKey(grant.Namespace, grant.Name)}, &cg)
+		}
 		switch {
+		case onHub || apierrors.IsNotFound(err):
+			for _, c := range grant.Status.Clusters {
+				if c.ClusterName == cluster {
+					view.State, view.Message = string(c.State), c.Message
+					for _, b := range c.Bindings {
+						view.Bindings = append(view.Bindings, BindingView(b))
+					}
+				}
+			}
+			if onHub {
+				view.Subject = binding.FormatSubject(s.SubjectTemplate, grant.Spec.Requester)
+			}
+			if view.Permissions, err = s.hubPermissions(ctx, grant.Spec.Role, grant.Spec.Namespaces); err != nil {
+				s.writeJSON(w, http.StatusInternalServerError, map[string]string{errorKey: err.Error()})
+				return
+			}
 		case err == nil:
 			view.State, view.Message, view.Subject = string(cg.Status.Phase), cg.Status.Message, cg.Spec.Subject
 			for _, b := range cg.Status.Bindings {
@@ -213,16 +235,6 @@ func (s *Server) handleGrantPermissions(w http.ResponseWriter, r *http.Request, 
 			}
 			if !view.Permissions.Found {
 				view.Permissions.Message = "The cluster has not reported the rules of this role."
-			}
-		case apierrors.IsNotFound(err):
-			for _, c := range grant.Status.Clusters {
-				if c.ClusterName == cluster {
-					view.State, view.Message = string(c.State), c.Message
-				}
-			}
-			if view.Permissions, err = s.hubPermissions(ctx, grant.Spec.Role, grant.Spec.Namespaces); err != nil {
-				s.writeJSON(w, http.StatusInternalServerError, map[string]string{errorKey: err.Error()})
-				return
 			}
 		default:
 			s.writeJSON(w, http.StatusInternalServerError, map[string]string{errorKey: err.Error()})

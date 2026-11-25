@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -139,15 +140,16 @@ func (r *AccessGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Active Grant: Ensure RBAC bindings are created on Hub ONLY if Hub is targeted (C3)
 	var managedBindings []protemv1alpha1.ManagedBindingRef
+	var hubErr error
 	if r.isHubTargeted(&grant) {
-		var err error
-		managedBindings, err = r.ensureBindings(ctx, &grant)
-		if err != nil {
-			return ctrl.Result{}, err
+		managedBindings, hubErr = r.ensureBindings(ctx, &grant)
+		// A failure on the hub is reported as that cluster's state, when the grant lists it.
+		if hubErr != nil && !slices.Contains(grant.Spec.Clusters, r.HubClusterName) {
+			return ctrl.Result{}, hubErr
 		}
 	}
 
-	clusterStates := r.ensureClusterGrants(ctx, &grant)
+	clusterStates := r.ensureClusterGrants(ctx, &grant, managedBindings, hubErr)
 
 	requeueAfter := time.Until(grant.Spec.ExpiresAt.Time)
 	if requeueAfter > 30*time.Second {
@@ -168,6 +170,9 @@ func (r *AccessGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
+	if hubErr != nil {
+		return ctrl.Result{}, hubErr
+	}
 	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
@@ -190,7 +195,7 @@ func (r *AccessGrantReconciler) cleanupBindings(ctx context.Context, grant *prot
 	return binding.Remove(ctx, r.Client, hubBindingOwner, grant.Namespace, grant.Name)
 }
 
-func (r *AccessGrantReconciler) ensureClusterGrants(ctx context.Context, grant *protemv1alpha1.AccessGrant) []protemv1alpha1.ClusterBindingState {
+func (r *AccessGrantReconciler) ensureClusterGrants(ctx context.Context, grant *protemv1alpha1.AccessGrant, hubBindings []protemv1alpha1.ManagedBindingRef, hubErr error) []protemv1alpha1.ClusterBindingState {
 	log := logf.FromContext(ctx).WithValues("accessgrant", grant.Name)
 	clusterStates := make([]protemv1alpha1.ClusterBindingState, 0, len(grant.Spec.Clusters))
 	transitionTime := func(cluster string, state protemv1alpha1.ClusterBindingStatePhase) metav1.Time {
@@ -202,6 +207,26 @@ func (r *AccessGrantReconciler) ensureClusterGrants(ctx context.Context, grant *
 		return metav1.Now()
 	}
 	for _, clusterName := range grant.Spec.Clusters {
+		// The hub has no agent to read a ClusterGrant or report on one: the operator bound there itself.
+		if clusterName == r.HubClusterName {
+			// Versions before 0.1.4 wrote one.
+			stale := &protemv1alpha1.ClusterGrant{}
+			if err := r.Get(ctx, client.ObjectKey{Namespace: fleet.ClusterNamespace(clusterName), Name: fleet.GrantKey(grant.Namespace, grant.Name)}, stale); err == nil {
+				_ = r.Delete(ctx, stale)
+			}
+			state, message := protemv1alpha1.ClusterBindingStateActive, "Applied by the hub"
+			if hubErr != nil {
+				state, message = protemv1alpha1.ClusterBindingStateFailed, hubErr.Error()
+			}
+			clusterStates = append(clusterStates, protemv1alpha1.ClusterBindingState{
+				ClusterName:        clusterName,
+				State:              state,
+				Bindings:           hubBindings,
+				Message:            message,
+				LastTransitionTime: transitionTime(clusterName, state),
+			})
+			continue
+		}
 		clusterNS := fleet.ClusterNamespace(clusterName)
 
 		// Ensure cluster namespace exists on Hub
@@ -280,7 +305,7 @@ func (r *AccessGrantReconciler) cleanupClusterGrants(ctx context.Context, grant 
 		clusterNS := fleet.ClusterNamespace(clusterName)
 		var cg protemv1alpha1.ClusterGrant
 		if err := r.Get(ctx, client.ObjectKey{Namespace: clusterNS, Name: fleet.GrantKey(grant.Namespace, grant.Name)}, &cg); err == nil {
-			if grant.Spec.Revocation != nil {
+			if grant.Spec.Revocation != nil && clusterName != r.HubClusterName {
 				cg.Spec.Revocation = grant.Spec.Revocation
 				_ = r.Update(ctx, &cg)
 			} else {

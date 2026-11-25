@@ -194,6 +194,12 @@ func (s *Server) patchCluster(w http.ResponseWriter, r *http.Request, user UserI
 		s.writeJSON(w, http.StatusBadRequest, map[string]string{errorKey: "Invalid request body: " + err.Error()})
 		return
 	}
+	if payload.Subject != nil && name == s.HubClusterName {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{
+			errorKey: "the hub cluster binds people with the operator's subject template (--subject-template); it cannot be set here",
+		})
+		return
+	}
 	if sub := payload.Subject; sub != nil && *sub != "" && !strings.Contains(*sub, "{{.Email}}") && !strings.Contains(*sub, "{{.Username}}") {
 		s.writeJSON(w, http.StatusBadRequest, map[string]string{
 			errorKey: "subject must contain {{.Email}} or {{.Username}}; a constant subject would map every user to one RBAC identity",

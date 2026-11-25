@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,6 +23,7 @@ import (
 
 	protemv1alpha1 "github.com/iLLeniumStudios/protem/api/v1alpha1"
 	"github.com/iLLeniumStudios/protem/internal/binding"
+	"github.com/iLLeniumStudios/protem/internal/fleet"
 )
 
 const (
@@ -650,5 +653,125 @@ func TestGrantForBinding(t *testing.T) {
 				t.Fatalf("grantForBinding = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+// The hub has no agent to report on it: the operator binds there itself and must say so, or the
+// hub's entry stays Pending for the life of the grant.
+func TestAccessGrantReconciler_ReportsTheHubsOwnBindings(t *testing.T) {
+	scheme := setupTestScheme(t)
+
+	grant := &protemv1alpha1.AccessGrant{
+		ObjectMeta: metav1.ObjectMeta{Name: "grant-hub", Namespace: defaultNs, Finalizers: []string{protemFinalizer}},
+		Spec: protemv1alpha1.AccessGrantSpec{
+			RequestRef: reqOne,
+			ProfileRef: profOne,
+			Requester:  protemv1alpha1.RequesterInfo{Username: aliceUsername, Email: aliceEmail},
+			Role:       protemv1alpha1.TargetRoleRef{Kind: clusterRoleKind, Name: viewRole},
+			Scope:      protemv1alpha1.ProfileScopeNamespaced,
+			Namespaces: []string{defaultNs},
+			Clusters:   []string{hubClusterName, "prod-spoke-1"},
+			ExpiresAt:  metav1.NewTime(time.Now().Add(1 * time.Hour)),
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(grant).WithStatusSubresource(grant).Build()
+	reconciler := &AccessGrantReconciler{Client: fakeClient, Scheme: scheme, HubClusterName: hubClusterName}
+	key := client.ObjectKey{Namespace: defaultNs, Name: "grant-hub"}
+	if _, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: key}); err != nil {
+		t.Fatalf("reconcile failed: %v", err)
+	}
+
+	var got protemv1alpha1.AccessGrant
+	if err := fakeClient.Get(context.Background(), key, &got); err != nil {
+		t.Fatalf("failed to get grant: %v", err)
+	}
+	if len(got.Status.ManagedBindings) != 1 || len(got.Status.Clusters) != 2 {
+		t.Fatalf("expected one hub binding and two cluster states, got %+v", got.Status)
+	}
+	hub, target := got.Status.Clusters[0], got.Status.Clusters[1]
+	if hub.ClusterName != hubClusterName || hub.State != protemv1alpha1.ClusterBindingStateActive ||
+		!reflect.DeepEqual(hub.Bindings, got.Status.ManagedBindings) {
+		t.Errorf("hub state = %+v, want Active with the bindings %+v", hub, got.Status.ManagedBindings)
+	}
+	if target.State != protemv1alpha1.ClusterBindingStatePending {
+		t.Errorf("target state = %q, want Pending until its agent reports", target.State)
+	}
+
+	var cg protemv1alpha1.ClusterGrant
+	err := fakeClient.Get(context.Background(), client.ObjectKey{Namespace: fleet.ClusterNamespace(hubClusterName), Name: fleet.GrantKey(defaultNs, "grant-hub")}, &cg)
+	if !apierrors.IsNotFound(err) {
+		t.Errorf("a ClusterGrant was written for the hub, which no agent reads (err %v)", err)
+	}
+}
+
+func hubAndTargetGrant(name string) *protemv1alpha1.AccessGrant {
+	return &protemv1alpha1.AccessGrant{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: defaultNs, Finalizers: []string{protemFinalizer}},
+		Spec: protemv1alpha1.AccessGrantSpec{
+			RequestRef: reqOne,
+			ProfileRef: profOne,
+			Requester:  protemv1alpha1.RequesterInfo{Username: aliceUsername, Email: aliceEmail},
+			Role:       protemv1alpha1.TargetRoleRef{Kind: clusterRoleKind, Name: viewRole},
+			Scope:      protemv1alpha1.ProfileScopeNamespaced,
+			Namespaces: []string{defaultNs},
+			Clusters:   []string{hubClusterName, "prod-spoke-1"},
+			ExpiresAt:  metav1.NewTime(time.Now().Add(1 * time.Hour)),
+		},
+	}
+}
+
+// A hub binding that cannot be made is that cluster's failure, like an agent's: the grant says so
+// and the other clusters are still served.
+func TestAccessGrantReconciler_HubBindingFailureIsReportedAndDoesNotBlockOtherClusters(t *testing.T) {
+	scheme := setupTestScheme(t)
+	grant := hubAndTargetGrant("grant-hub-fails")
+	refused := errors.New("namespace is being terminated")
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(grant).WithStatusSubresource(grant).
+		WithInterceptorFuncs(interceptor.Funcs{
+			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				if _, ok := obj.(*rbacv1.RoleBinding); ok {
+					return refused
+				}
+				return c.Create(ctx, obj, opts...)
+			},
+		}).Build()
+	reconciler := &AccessGrantReconciler{Client: fakeClient, Scheme: scheme, HubClusterName: hubClusterName}
+	key := client.ObjectKey{Namespace: defaultNs, Name: grant.Name}
+
+	if _, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: key}); !errors.Is(err, refused) {
+		t.Fatalf("reconcile error = %v, want the binding error so the reconcile is retried", err)
+	}
+	var got protemv1alpha1.AccessGrant
+	if err := fakeClient.Get(context.Background(), key, &got); err != nil {
+		t.Fatalf("failed to get grant: %v", err)
+	}
+	if len(got.Status.Clusters) != 2 {
+		t.Fatalf("expected two cluster states, got %+v", got.Status.Clusters)
+	}
+	if hub := got.Status.Clusters[0]; hub.State != protemv1alpha1.ClusterBindingStateFailed || !strings.Contains(hub.Message, refused.Error()) {
+		t.Errorf("hub state = %+v, want Failed with the error", hub)
+	}
+	var cg protemv1alpha1.ClusterGrant
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Namespace: fleet.ClusterNamespace("prod-spoke-1"), Name: fleet.GrantKey(defaultNs, grant.Name)}, &cg); err != nil {
+		t.Errorf("the target cluster got no ClusterGrant: %v", err)
+	}
+}
+
+func TestAccessGrantReconciler_RemovesAClusterGrantLeftForTheHub(t *testing.T) {
+	scheme := setupTestScheme(t)
+	grant := hubAndTargetGrant("grant-hub-leftover")
+	leftover := &protemv1alpha1.ClusterGrant{
+		ObjectMeta: metav1.ObjectMeta{Namespace: fleet.ClusterNamespace(hubClusterName), Name: fleet.GrantKey(defaultNs, grant.Name)},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(grant, leftover).WithStatusSubresource(grant).Build()
+	reconciler := &AccessGrantReconciler{Client: fakeClient, Scheme: scheme, HubClusterName: hubClusterName}
+
+	if _, err := reconciler.Reconcile(context.Background(), ctrl.Request{NamespacedName: client.ObjectKeyFromObject(grant)}); err != nil {
+		t.Fatalf("reconcile failed: %v", err)
+	}
+	err := fakeClient.Get(context.Background(), client.ObjectKeyFromObject(leftover), &protemv1alpha1.ClusterGrant{})
+	if !apierrors.IsNotFound(err) {
+		t.Errorf("the hub's leftover ClusterGrant is still there (err %v)", err)
 	}
 }
