@@ -5,11 +5,12 @@ Protem binds on a target cluster match the name that cluster's API server gives 
 when they use `kubectl` with Keycloak.
 
 **Tested:** every command here was run on 2026-11-25. The setup was Keycloak 24.0.5 with a
-certificate from a private CA, chart 0.1.3 with its bundled oauth2-proxy v7.12.0, and the hub's
-own cluster as the target cluster: k3s v1.35.5 in k3d, with the API server's `--oidc-*` flags. A
-script played the browser with `curl` for both the hub sign-in and the `kubectl oidc-login`
-sign-in, and the UI was reached through a port-forward at `http://localhost` rather than an
-Ingress. Not tested:
+certificate from a private CA, the chart with its bundled oauth2-proxy v7.12.0, and the hub's
+own cluster as the target cluster: k3s v1.35.5 in k3d, with the API server's `--oidc-*` flags.
+The guide was first run on chart 0.1.3; the private CA setting and setting B with requests
+created by `kubectl` were run again on 0.1.4. A script played the browser with `curl` for the
+hub sign-in and fetched the tokens for `kubectl`, and the UI was reached through a port-forward
+at `http://localhost` rather than an Ingress. Not tested:
 
 - a separate target cluster with an agent;
 - Keycloak 25 or later;
@@ -125,11 +126,8 @@ From version 0.1.4 the chart can add your CA to both:
 
 The certificates are added to the public CAs the images already trust, not used instead of them.
 
-This setting was checked on 2026-11-25 on k3d against a stand-in OIDC issuer with a certificate
-from a private CA, not against Keycloak: without it both containers crashed with the error
-above, and with it both started and the proxy completed OIDC discovery. The Keycloak test
-itself ran on chart 0.1.3, which has no such setting, with the same ConfigMap mounted by a
-hand-written patch of the Deployment.
+On 0.1.4 against Keycloak: without the setting both containers crashed with the error above;
+with it both started, and a person signed in through the proxy. Chart 0.1.3 has no such setting.
 
 ## Use Keycloak groups in profiles
 
@@ -367,8 +365,10 @@ See [How to enforce requester identity for kubectl requests](how-to-enforce-requ
   the prefix removed, so a request can name `username: alice`, `groups: [devs]` as setting A
   does. See
   [How to enforce requester identity for kubectl requests](how-to-enforce-requester-identity-for-kubectl-requests.md#if-the-api-server-adds-a-prefix).
-  This was checked with an API server in the test suite enforcing the policy with these two
-  variables set, not by a rerun on Keycloak.
+  On 0.1.4 against Keycloak, alice's `kubectl` request naming `alice` and `groups: [devs]` was
+  admitted, approved and bound as `oidc:alice`, and gave her access; the forms with `oidc:alice`
+  or `oidc:devs`, a group she is not in, and naming bob were refused. A request through
+  `kubectl` and one through the UI for the same profile were refused as duplicates of each other.
 
 ## Check it works
 

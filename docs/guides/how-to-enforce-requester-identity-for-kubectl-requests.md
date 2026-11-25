@@ -16,6 +16,10 @@ It is a `ValidatingAdmissionPolicy` (Kubernetes 1.30 or later, no webhook). The 
 accepts a request only when `spec.requester.username` is the caller's own username, the email is
 empty or equal to that username, and every listed group is one the caller belongs to.
 `spec.requester.email` may be left out of the manifest entirely; the CRD no longer requires it.
+From 0.1.5, a missing email then stands for the username when checking whether two requests or
+grants are the same person; on 0.1.4 it did not, so a request naming only `username` could be
+treated as a different person from the same login's other identity (found on GKE, where this
+mattered because the hub's HTTP API and Kubernetes API read different claims as username).
 
 ## Let trusted automation request on someone else's behalf
 
@@ -72,9 +76,9 @@ With a prefix set, the policy strips it from the caller's name and groups before
 `spec.requester` is written exactly as a request from the UI would be: the bare name and group
 ids. A caller whose name does not carry the prefix cannot create a request in their own name at
 all, and neither can one whose name starts with `system:` once the prefix is removed; groups
-like that are ignored. This was checked with an API server in the test suite enforcing the
-policy with these two variables set (`internal/controller/admission_test.go`), not by a rerun
-on EKS or Keycloak.
+like that are ignored. This was run on EKS with Microsoft Entra ID and on k3s with Keycloak
+(both with the prefix `oidc:`); the `system:` refusal is covered by the test suite only
+(`internal/controller/admission_test.go`).
 
 ## Keep usernames consistent
 

@@ -730,12 +730,48 @@ Found by the independent review of those fixes and fixed before release:
   the hub by an older version is removed.
 - A `null` prefix in the chart rendered a prefix nobody has (fails closed).
 
+Still open at the time (closed by recheck 10): the shared IAM role on EKS, GKE, and reruns of
+the prefix settings and `oidc.caConfigMap` on real clusters.
+
+---
+
+# Recheck 10 (2026-11-25): 0.1.4 rerun on EKS and Keycloak, first run on GKE
+
+Protem 0.1.4 from the published chart ran on two EKS clusters with Microsoft Entra ID, on k3s
+with Keycloak 24 behind a private CA, and on two GKE Standard clusters with Google-issued
+identities. Evidence is kept outside git (`eks-test/014/`, `aks-test/keycloak-014/`,
+`gke-test/`). Everything created in AWS, Entra ID and Google Cloud was deleted and confirmed
+gone.
+
+Confirmed on real clusters:
+
+- **Prefix settings** (EKS, Keycloak): a `kubectl` request naming the bare user name and groups
+  is admitted and bound with the prefix once; prefixed names, foreign groups and other people
+  are refused; a `kubectl` request and a UI request are the same person in both directions.
+- **`oidc.caConfigMap`** (Keycloak): both containers crash without it and start with it, with no
+  hand patch, and a person signs in through the proxy.
+- **Unset cluster subject** (EKS, GKE) uses the operator's template; **the hub's own cluster**
+  shows `Active` with its bindings (EKS, GKE, Keycloak).
+- **A shared IAM role on EKS** works with an access entry whose user name ends in
+  `{{SessionNameRaw}}`: a grant was bound for it, the session named for alice had access and one
+  named for bob had none.
+- **GKE** names people by their Google email with no groups; the default subject matches, and
+  profiles that list people by email work.
+
+Found and fixed:
+
+- **A `kubectl` request naming only the username was not the same person as the login whose
+  email is that name** (found on GKE; also true wherever the API server names people by email).
+  She could not cancel it from the UI. A missing email now stands for the username.
+- **Docs:** an app created with `az ad app create` has no `User.Read` permission and cannot sign
+  anyone in until it is added; the partial allowed-roles list is not EKS-specific (GKE too).
+
 Still open:
 
-- A shared IAM role on EKS (the IAM Identity Center pattern): EKS rewrites `@` in the session
-  name, so a subject built from an email does not match. AWS documents `{{SessionNameRaw}}` for
-  this; not run. No grant was bound for a shared role.
-- Nothing has run on GKE.
+- The web UI with Google sign-in (needs an OAuth client), human Google accounts, Google Groups
+  for RBAC and GKE Autopilot were not tested.
+- IAM Identity Center itself was not used; a role assumed by hand stood in for it.
+- A Google token gives the hub the numeric `sub` as the username, so `{{.Username}}` is useless
+  as a subject on GKE; the default `{{.Email}}` is right.
 - The API accepts a request from someone a profile does not allow (201), and the controller
   then rejects it. Correct outcome, late answer.
-- The prefix settings and `oidc.caConfigMap` have not been run on EKS or with Keycloak itself.

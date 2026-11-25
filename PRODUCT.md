@@ -51,7 +51,7 @@ Protem gives people temporary Kubernetes access across many clusters. A person r
 
 - A working product: the UI runs against a real hub with real requests, grants, clusters and audit events.
 - Screenshots in `docs/guides/images/`, diagrams and a poster in `docs/architecture/images/`.
-- No customers, testimonials, benchmarks or production deployments exist; none may be implied. It has run on kind, k3d, AKS and EKS only.
+- No customers, testimonials, benchmarks or production deployments exist; none may be implied. It has run on kind, k3d, AKS, EKS and GKE only.
 
 ## Product Principles
 
