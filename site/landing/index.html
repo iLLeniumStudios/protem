@@ -443,6 +443,49 @@ protem-grant-protem-system.grant-alice-payments-edit    ClusterRole/edit   12m
     </div>
   </section>
 
+  <section class="sec" id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="features-title">Features</h2>
+        <p>The rest of what a request goes through, from sign-in to audit.</p>
+      </div>
+      <ul class="features">
+        <li>
+          <h3>Approval workflow</h3>
+          <p>Approvers by group or by name, one or several approvals, and no self-approval unless a rule allows it.</p>
+        </li>
+        <li>
+          <h3>Eligibility per profile</h3>
+          <p>Each profile names the groups and people who may request it, and for how long.</p>
+        </li>
+        <li>
+          <h3>Reasons and tickets</h3>
+          <p>A request carries a reason, and a ticket reference when the profile asks for one.</p>
+        </li>
+        <li>
+          <h3>Early revoke</h3>
+          <p>The requester or an administrator can end access before its time is up.</p>
+        </li>
+        <li>
+          <h3>Audit trail</h3>
+          <p>Every request, decision, grant, revoke and expiry is one JSON line in the operator's log and a row on the Audit page.</p>
+        </li>
+        <li>
+          <h3>Single sign-on</h3>
+          <p>Sign in through any OIDC identity provider, with oauth2-proxy in front of the hub.</p>
+        </li>
+        <li>
+          <h3>Clusters added from the UI</h3>
+          <p>Register a cluster and connect its agent with a short-lived join token.</p>
+        </li>
+        <li>
+          <h3>Helm and OLM</h3>
+          <p>Install the hub with either. Images are built for amd64 and arm64.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
   <section class="git" aria-labelledby="git-title">
     <div class="wrap git-grid">
       <div class="git-copy">
