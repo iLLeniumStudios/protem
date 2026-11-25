@@ -23,12 +23,26 @@
 </div>
 
 <p align="center">
+  <a href="#features"><b>Features</b></a> ·
   <a href="#getting-started"><b>Getting started</b></a> ·
   <a href="#core-concepts"><b>Core concepts</b></a> ·
   <a href="#architecture"><b>Architecture</b></a> ·
   <a href="#install"><b>Install</b></a> ·
   <a href="#get-involved"><b>Get involved</b></a>
 </p>
+
+## Features
+
+- **Just-in-time access.** People request a role for a set time, with a reason and, when the profile asks for one, a ticket reference. Each cluster's rule grants it at once or sends it for approval.
+- **Many clusters from one hub.** An agent on each cluster pulls its own grants. Clusters are added from the UI with a short-lived join token.
+- **Approval workflow.** Approvers by group or by name, one or several approvals, no self-approval unless a rule allows it, and a timeout for requests nobody decides.
+- **Permission preview.** Approvers see the role's actual rules before deciding, with the risky ones (reading Secrets, opening a shell in pods) flagged.
+- **Automatic expiry and early revoke.** Each cluster removes access at its end time, even while the hub is unreachable. The requester or an administrator can end it sooner.
+- **Audit trail.** Every request, decision, grant, revoke and expiry is one JSON line in the operator's log and a row on the Audit page. See [the audit log](docs/operations/audit-log.md).
+- **Single sign-on.** Sign in through any OIDC identity provider, with oauth2-proxy in front of the hub. See [how to set up login](docs/guides/how-to-set-up-login.md).
+- **GitOps-native.** Profiles, requests and clusters are Kubernetes resources. The UI is read-only for anything Argo CD, Flux or Helm manages.
+- **Access timeline.** Who has access to which cluster, and until when, on one screen.
+- **Helm and OLM installs.** Images are built for `linux/amd64` and `linux/arm64`.
 
 ## Getting started
 
@@ -78,10 +92,8 @@ Each one is explained with a real manifest in [the concepts guide](docs/architec
 
 ## Core principles
 
-- **Access ends on its own.** Every grant has an end time. The target cluster enforces it, so access still expires while the hub is unreachable.
+- **Enforced where the access is.** The target cluster removes each binding at its end time, so access expires on time even while the hub is unreachable.
 - **No stored admin credentials.** Each agent pulls its own grants from the hub. The hub holds no credentials for the clusters it serves.
-- **Git first.** Who may request which role, on which clusters, and who approves are resources you keep in Git. The UI steps back for anything Argo CD, Flux or Helm manages.
-- **Approvers see what they approve.** A request shows the role's actual rules, with the risky ones (reading Secrets, opening a shell in pods) listed first.
 - **The cluster owner sets the limit.** An agent can bind only the roles its own cluster allows, whatever the hub asks for.
 - **Plain RBAC.** No authorization webhook and no API server flags, so it does not depend on control-plane access.
 
