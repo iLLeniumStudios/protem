@@ -24,6 +24,8 @@ oidc:
   issuerURL: ""
   # Audience (client ID) the ID tokens must carry (--oidc-client-id).
   clientID: ""
+  # Name of a ConfigMap in the release namespace whose values are CA certificates in PEM. The operator and the auth proxy then trust them as well as the public CAs. Set it when the identity provider's certificate comes from a private CA.
+  caConfigMap: ""
 
 # Name of the TargetCluster that stands for the cluster the operator runs on (--hub-cluster-name).
 hubClusterName: local
@@ -135,3 +137,7 @@ metrics:
 admissionPolicy:
   # Make the API server reject AccessRequests that name someone other than their creator. See docs/guides/how-to-set-up-login.md.
   enabled: true
+  # The prefix the hub's API server puts on user names it reads from a login token (its OIDC usernamePrefix), e.g. "oidc:". The policy compares without it, so kubectl and the UI name a person the same way.
+  usernamePrefix: ""
+  # The prefix the hub's API server puts on group names it reads from a login token (its OIDC groupsPrefix).
+  groupsPrefix: ""

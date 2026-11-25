@@ -91,6 +91,16 @@ spec:
         {{- range .Values.extraArgs }}
         - {{ . | quote }}
         {{- end }}
+        {{- if .Values.oidc.caConfigMap }}
+        # Go reads every certificate in these directories in addition to the image's own bundle.
+        env:
+        - name: SSL_CERT_DIR
+          value: /etc/ssl/certs:/etc/protem/oidc-ca
+        volumeMounts:
+        - name: oidc-ca
+          mountPath: /etc/protem/oidc-ca
+          readOnly: true
+        {{- end }}
         {{- with .Values.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
@@ -151,6 +161,14 @@ spec:
             secretKeyRef:
               name: {{ $proxy.existingSecret }}
               key: cookie-secret
+        {{- if .Values.oidc.caConfigMap }}
+        - name: SSL_CERT_DIR
+          value: /etc/ssl/certs:/etc/protem/oidc-ca
+        volumeMounts:
+        - name: oidc-ca
+          mountPath: /etc/protem/oidc-ca
+          readOnly: true
+        {{- end }}
         ports:
         - name: auth-proxy
           containerPort: 4180
@@ -169,4 +187,10 @@ spec:
           requests:
             cpu: 10m
             memory: 32Mi
+      {{- end }}
+      {{- with .Values.oidc.caConfigMap }}
+      volumes:
+      - name: oidc-ca
+        configMap:
+          name: {{ . }}
       {{- end }}

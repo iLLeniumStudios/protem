@@ -15,6 +15,7 @@ Every value of the protem Helm chart in deploy/helm/protem, with its default and
 | `agent.manifests` | `""` | Kustomize location of the agent manifests the UI's install files use (--agent-manifests). Defaults to https://github.com/iLLeniumStudios/protem//config/agent/spoke?ref=v<appVersion>. |
 | `oidc.issuerURL` | `""` | Issuer of the ID tokens the operator accepts (--oidc-issuer-url). |
 | `oidc.clientID` | `""` | Audience (client ID) the ID tokens must carry (--oidc-client-id). |
+| `oidc.caConfigMap` | `""` | Name of a ConfigMap in the release namespace whose values are CA certificates in PEM. The operator and the auth proxy then trust them as well as the public CAs. Set it when the identity provider's certificate comes from a private CA. |
 | `hubClusterName` | `local` | Name of the TargetCluster that stands for the cluster the operator runs on (--hub-cluster-name). |
 | `hubAPIURL` | `""` | The hub's Kubernetes API URL as agents on target clusters reach it; needed to connect agents from the UI (--hub-api-url). |
 | `subjectTemplate` | `""` | Maps a login to an RBAC subject, e.g. "oidc:{{.Email}}"; empty uses the operator's default "{{.Email}}" (--subject-template). |
@@ -52,3 +53,5 @@ Every value of the protem Helm chart in deploy/helm/protem, with its default and
 | `networkPolicy.enabled` | `false` | Admit traffic to the operator pod only on the UI port and, from namespaces labelled metrics=enabled, the metrics port. |
 | `metrics.enabled` | `true` | Serve metrics over HTTPS on :8443, readable only by subjects bound to the metrics-reader ClusterRole. |
 | `admissionPolicy.enabled` | `true` | Make the API server reject AccessRequests that name someone other than their creator. See docs/guides/how-to-set-up-login.md. |
+| `admissionPolicy.usernamePrefix` | `""` | The prefix the hub's API server puts on user names it reads from a login token (its OIDC usernamePrefix), e.g. "oidc:". The policy compares without it, so kubectl and the UI name a person the same way. |
+| `admissionPolicy.groupsPrefix` | `""` | The prefix the hub's API server puts on group names it reads from a login token (its OIDC groupsPrefix). |
