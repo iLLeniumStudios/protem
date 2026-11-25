@@ -52,7 +52,17 @@ No new access can be requested or approved. Access already on a cluster still en
 - **A tampered audit trail.** Audit events are lines in the operator's log. Whoever controls the hub or the log pipeline can alter or drop them. Ship them to a store you control.
 - **A join token in the wrong hands.** The token issued by "Add cluster" works for 15 minutes by default and cannot be revoked on its own; reissuing the cluster's credentials revokes it together with everything else.
 - **Clocks that disagree.** Expiry is judged by the target cluster's clock. Keep clocks synchronised.
-- **Supply chain.** Images are not signed and no bill of materials is published yet.
+- **Supply chain.** From v0.1.2 the operator and agent images and the Helm chart are signed with cosign by the release workflow; earlier versions are not. No bill of materials is published yet. Nothing checks the signatures for you: verify them yourself, or enforce them with an admission policy.
+
+To verify the chart of a release:
+
+```sh
+cosign verify ghcr.io/illeniumstudios/charts/protem:<version> \
+  --certificate-identity https://github.com/iLLeniumStudios/protem/.github/workflows/release.yml@refs/tags/v<version> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The images `ghcr.io/illeniumstudios/protem:v<version>` and `protem-agent:v<version>` verify the same way.
 
 Protem has not had an independent security review. It has been run on kind, k3d and AKS (with Microsoft Entra ID sign-in), not yet on EKS or GKE.
 
