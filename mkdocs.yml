@@ -116,6 +116,7 @@ nav:
       - Runbooks:
           - How to fix a cluster not reporting: operations/runbooks/how-to-fix-a-cluster-not-reporting.md
           - How to fix a failed grant: operations/runbooks/how-to-fix-a-failed-grant.md
+          - How to fix a grant that gives no access: operations/runbooks/how-to-fix-a-grant-that-gives-no-access.md
           - How to fix a rejected request: operations/runbooks/how-to-fix-a-rejected-request.md
           - operations/runbooks/how-to-fix-agent-unauthorized.md
           - operations/runbooks/how-to-fix-signed-out-after-login.md

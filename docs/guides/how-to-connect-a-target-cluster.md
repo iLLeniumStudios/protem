@@ -165,6 +165,11 @@ files install; see [Operator flags](../reference/operator-flags.md).
 2. Save the two files the UI shows, `hub.kubeconfig` and `kustomization.yaml`, in one empty
    directory. Keep `hub.kubeconfig` out of git: it holds the join token.
 3. In that directory, run `kubectl apply -k .` against the target cluster.
+4. Once the dialog shows **Agent connected**, run `kubectl auth whoami` against the target
+   cluster. It should print the name the dialog says you would be bound as. If it prints
+   something else, change **Subject** in the cluster's settings, or grants there will show as
+   active and give no access; see
+   [How to fix a grant that gives no access](../operations/runbooks/how-to-fix-a-grant-that-gives-no-access.md).
 
 The join token works for `--join-token-ttl` (default 15 minutes, allowed 10m to 1h), so run the
 command soon. The agent replaces the join token with its own renewing token once a third of the
