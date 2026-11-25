@@ -95,7 +95,8 @@ there. Keep it out of git. The Secret keeps its exact name `protem-agent-hub`, w
 kustomize's hash suffix, because the agent writes its renewed token there by name.
 
 ```sh
-make docker-build-agent docker-push-agent AGENT_IMG=registry.example.com/protem-agent:v0.1.0
+TAG=$(git describe --tags --always)
+make docker-build-agent docker-push-agent AGENT_IMG=registry.example.com/protem-agent:$TAG
 
 mkdir -p clusters/prod-eu-agent
 mv hub.kubeconfig clusters/prod-eu-agent/
@@ -105,7 +106,7 @@ resources:
 images:
 - name: protem-agent
   newName: registry.example.com/protem-agent
-  newTag: v0.1.0
+  newTag: $TAG
 configMapGenerator:
 - name: protem-agent
   namespace: protem-system

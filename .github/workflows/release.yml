@@ -117,6 +117,7 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "bundle=${base}-bundle:v${version}" >> "$GITHUB_OUTPUT"
           echo "catalog=${base}-catalog:v${version}" >> "$GITHUB_OUTPUT"
+          echo "catalog_latest=${base}-catalog:latest" >> "$GITHUB_OUTPUT"
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
@@ -159,7 +160,9 @@ jobs:
           file: catalog.Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.names.outputs.catalog }}
+          tags: |
+            ${{ steps.names.outputs.catalog }}
+            ${{ steps.names.outputs.catalog_latest }}
 
   # The packages may be private, so helm and the cluster both log in to pull them.
   verify:

@@ -1,6 +1,6 @@
 # VERSION is the release version, without the leading v: the bundle's CSV version and the tag of
-# the operator, bundle and catalog images (e.g. make bundle VERSION=0.1.0).
-VERSION ?= 0.0.1
+# the operator, bundle and catalog images. It defaults to the latest git tag.
+VERSION ?= $(or $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//'),0.0.1)
 
 # The bundle's only channel, which is also its default.
 CHANNELS ?= alpha
@@ -408,6 +408,8 @@ site: $(SITE_VENV)/bin/mkdocs $(MERMAID_DIR) ## Build the website into _site/: t
 	if [ -d site/landing ]; then cp -R site/landing/. _site/ && \
 		v=$$(shasum -a 256 _site/styles.css | cut -c1-10) && \
 		sed -i.bak "s|href=\"styles.css\"|href=\"styles.css?v=$$v\"|" _site/index.html && rm _site/index.html.bak; fi
+	@grep -o 'protem/main/[^)]*' site/landing/llms.txt | sed 's|protem/main/||' | while read -r f; do \
+		test -f "$$f" || { echo "site/landing/llms.txt links to $$f, which does not exist"; exit 1; }; done
 	cp site/docs/404.html _site/404.html
 	echo protem.dev > _site/CNAME
 	touch _site/.nojekyll

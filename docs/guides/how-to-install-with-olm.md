@@ -25,7 +25,7 @@ instead, see [How to install with Helm](how-to-install-with-helm.md).
      namespace: protem-system
    spec:
      sourceType: grpc
-     image: ghcr.io/illeniumstudios/protem-catalog:v0.1.0
+     image: ghcr.io/illeniumstudios/protem-catalog:latest
      displayName: Protem
      publisher: iLLeniumStudios
    ---
@@ -88,8 +88,10 @@ Requests sent from the UI are not affected. To add the policy, apply it from the
 installed:
 
 ```sh
-kubectl apply -k 'https://github.com/iLLeniumStudios/protem//config/admission?ref=v0.1.0'
+kubectl apply -k 'https://github.com/iLLeniumStudios/protem//config/admission?ref=v<version>'
 ```
+
+Replace `<version>` with the installed version, which `kubectl -n protem-system get csv` shows.
 
 What it checks is in
 [How to enforce requester identity for kubectl requests](how-to-enforce-requester-identity-for-kubectl-requests.md).

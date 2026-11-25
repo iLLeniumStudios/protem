@@ -540,14 +540,13 @@ protem-grant-protem-system.grant-alice-payments-edit    ClusterRole/edit   12m
   <section class="install" id="install" aria-labelledby="install-title">
     <div class="wrap narrow">
       <h2 id="install-title">Install</h2>
-      <p>Install the operator on your hub cluster with Helm. Replace <var>&lt;version&gt;</var> with a released chart version.</p>
+      <p>Install the operator on your hub cluster with Helm. This installs the latest release.</p>
       <div class="code command">
         <div class="code-head">
           <span>Shell</span>
           <button class="copy" type="button" data-copy="helm-cmd" hidden>Copy command</button>
         </div>
 <pre id="helm-cmd" tabindex="0" aria-label="Helm install command"><code>helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
-  --version <var>&lt;version&gt;</var> \
   --namespace protem-system --create-namespace</code></pre>
       </div>
       <ul class="install-links">

@@ -72,7 +72,7 @@ networkPolicy:
 Install or upgrade:
 
 ```sh
-helm upgrade --install protem oci://ghcr.io/illeniumstudios/charts/protem --version 0.1.0 \
+helm upgrade --install protem oci://ghcr.io/illeniumstudios/charts/protem \
   --namespace protem-system --create-namespace -f values.yaml
 ```
 

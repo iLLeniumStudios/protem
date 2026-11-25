@@ -12,11 +12,11 @@ instead, see [How to install with OLM](how-to-install-with-olm.md).
 ## Install
 
 The chart is published to `oci://ghcr.io/illeniumstudios/charts/protem` for each release.
-Use the release's version without the leading `v` (release `v0.1.0` is chart version `0.1.0`):
+Without `--version`, Helm installs the latest release. To pin one, add `--version` with the
+release's version without the leading `v` (release `v1.2.3` is chart version `1.2.3`):
 
 ```sh
 helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
-  --version 0.1.0 \
   --namespace protem-system --create-namespace \
   --set oidc.issuerURL=https://idp.example.com/realms/example \
   --set oidc.clientID=protem
@@ -31,7 +31,7 @@ explains what the hub expects from the token and how to set up the identity prov
 To see every value with its default:
 
 ```sh
-helm show values oci://ghcr.io/illeniumstudios/charts/protem --version 0.1.0
+helm show values oci://ghcr.io/illeniumstudios/charts/protem
 ```
 
 ## Values most people set
@@ -90,7 +90,7 @@ networkPolicy:
 And install:
 
 ```sh
-helm install protem oci://ghcr.io/illeniumstudios/charts/protem --version 0.1.0 \
+helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
   --namespace protem-system -f values.yaml
 ```
 

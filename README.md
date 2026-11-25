@@ -124,11 +124,11 @@ More in [how it works](docs/architecture/how-it-works.md) and [the security mode
 
 ## Install
 
-The hub needs Kubernetes 1.30 or later. Images and the chart are published to `ghcr.io/illeniumstudios` for each release; replace `<version>` with one from the [releases page](https://github.com/iLLeniumStudios/protem/releases), without the leading `v`.
+The hub needs Kubernetes 1.30 or later. Images and the chart are published to `ghcr.io/illeniumstudios` for each release. This installs the latest one; add `--version` to pin one from the [releases page](https://github.com/iLLeniumStudios/protem/releases), without the leading `v`.
 
 ```sh
 helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
-  --version <version> --namespace protem-system --create-namespace
+  --namespace protem-system --create-namespace
 ```
 
 Then two things make it usable:
