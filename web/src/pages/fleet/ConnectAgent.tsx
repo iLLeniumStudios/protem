@@ -161,7 +161,7 @@ export function ConnectAgent({ join, joined, onJoin, introRef }: ConnectAgentPro
               <time dateTime={until.toISOString()} className="tabular-nums">
                 {formatClock(until)}
               </time>{' '}
-              (<span className="tabular-nums">{left}</span>). The agent replaces it with its own as soon as it starts.
+              (<span className="tabular-nums">{left}</span>). The agent replaces it with its own a few minutes after it starts.
             </p>
             <p className="flex items-start gap-2 text-warning-text">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
