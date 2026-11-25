@@ -107,6 +107,10 @@ proxy port, plus metrics from namespaces labelled `metrics: enabled`.
 
 See [How to set up login with Microsoft Entra ID](how-to-set-up-login-with-entra-id.md).
 
+## Keycloak
+
+See [How to set up login with Keycloak](how-to-set-up-login-with-keycloak.md).
+
 ## Other sources: Dex
 
 GitHub, LDAP and SAML do not issue OIDC ID tokens. Put [Dex](https://dexidp.io) between them
