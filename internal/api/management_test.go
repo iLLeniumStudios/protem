@@ -202,8 +202,8 @@ func TestManagement_GitOpsManagedObjectsRefused(t *testing.T) {
 				testProfile(teamA, "p1", owner.labels, owner.annotations), testCluster(owner.labels, owner.annotations))
 			before := stateOf(t, c, tc.key, tc.obj())
 			w := call(s, tc.method, tc.path, aliceEmail, tc.body)
-			if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), owner.want) || !strings.Contains(w.Body.String(), "Git") {
-				t.Errorf("%s %s: expected 409 naming %q and Git, got %d: %s", owner.want, tc.name, owner.want, w.Code, w.Body.String())
+			if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), owner.want) {
+				t.Errorf("%s %s: expected 409 naming %q, got %d: %s", owner.want, tc.name, owner.want, w.Code, w.Body.String())
 			}
 			if after := stateOf(t, c, tc.key, tc.obj()); after != before {
 				t.Errorf("%s %s: object changed from %+v to %+v", owner.want, tc.name, before, after)

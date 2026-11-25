@@ -366,7 +366,7 @@ function ProfilePage({ ns, name }: { ns: string; name: string }) {
               {profile.managedBy && !capabilities?.management && <Badge tone="info">Managed by {profile.managedBy}</Badge>}
             </span>
             {profile.managedBy && capabilities?.management && (
-              <span>Managed by {profile.managedBy}. Change it in Git; edits here would be reverted.</span>
+              <span>Managed by {profile.managedBy}. Change it there; edits here would be reverted.</span>
             )}
           </span>
         }

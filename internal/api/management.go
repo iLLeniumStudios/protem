@@ -90,7 +90,7 @@ func (s *Server) refuseManaged(w http.ResponseWriter, kind string, obj client.Ob
 		return false
 	}
 	s.writeJSON(w, http.StatusConflict, map[string]string{
-		errorKey: fmt.Sprintf("%s %s is managed by %s; change it in Git instead", kind, client.ObjectKeyFromObject(obj), owner),
+		errorKey: fmt.Sprintf("%s %s is managed by %s; change it there instead", kind, client.ObjectKeyFromObject(obj), owner),
 	})
 	return true
 }

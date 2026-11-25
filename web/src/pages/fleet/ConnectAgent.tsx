@@ -176,7 +176,7 @@ export function ConnectAgent({ join, joined, onJoin, introRef }: ConnectAgentPro
           <p className="text-body font-medium text-text">Check how this cluster names you</p>
           <Block title="Check command" text="kubectl auth whoami" />
           <p className="min-w-0 text-body text-text-secondary">
-            It should print <Identifier className="text-text">{boundAs}</Identifier>. If it prints something else, change Subject in this
+            It should print <Identifier className="whitespace-normal break-all text-text">{boundAs}</Identifier>. If it prints something else, change Subject in this
             cluster's settings; otherwise grants here will show as active but give no access.
           </p>
         </div>

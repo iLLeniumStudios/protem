@@ -783,7 +783,7 @@ function EditProfile({ ns, name }: { ns: string; name: string }) {
           title="You can't edit this profile here"
           body={
             profile.managedBy
-              ? `Managed by ${profile.managedBy}. Change it in Git; edits here would be reverted.`
+              ? `Managed by ${profile.managedBy}. Change it there; edits here would be reverted.`
               : 'Editing profiles is turned off, or you may not change profiles in this namespace.'
           }
           back={profilePath(profile)}

@@ -1,4 +1,8 @@
+{{- $port := "8080" }}
+{{- if and .Values.authProxy.enabled (hasPrefix "http://localhost:" .Values.authProxy.publicURL) }}
+{{- $port = .Values.authProxy.publicURL | trimPrefix "http://localhost:" | trimSuffix "/" }}
+{{- end -}}
 The UI is served by the Service {{ include "protem.fullname" . }}-ui in {{ .Release.Namespace }}{{ if .Values.ingress.enabled }} and at http{{ if .Values.ingress.tls.secretName }}s{{ end }}://{{ .Values.ingress.host }}{{ end }}. Locally:
-  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "protem.fullname" . }}-ui 8080:80
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "protem.fullname" . }}-ui {{ $port }}:80
 Logging in needs authProxy.enabled or an identity-aware proxy in front of the UI: see docs/guides/how-to-set-up-login.md.
 Docs: https://github.com/iLLeniumStudios/protem/blob/main/docs/guides/how-to-install-with-helm.md

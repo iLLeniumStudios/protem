@@ -330,7 +330,7 @@ func TestEnrol_DeleteCluster(t *testing.T) {
 	}{
 		{"unknown", testCluster(nil, nil), nil, "/api/clusters/nope", http.StatusNotFound, "nope"},
 		{"active grant", testCluster(nil, nil), []client.Object{activeGrant("c1")}, "/api/clusters/c1", http.StatusConflict, "revoke"},
-		{"managed", testCluster(argo, nil), nil, "/api/clusters/c1", http.StatusConflict, "Git"},
+		{"managed", testCluster(argo, nil), nil, "/api/clusters/c1", http.StatusConflict, "Argo CD"},
 		{"plain", testCluster(nil, nil), nil, "/api/clusters/c1", http.StatusNoContent, ""},
 	} {
 		s, c := newMgmtServer(t, allowAll, enrolOptions(), append(tc.objs, tc.cluster)...)
