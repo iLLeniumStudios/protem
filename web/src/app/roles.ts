@@ -68,6 +68,13 @@ export function navFor(workspace: Workspace, v: Viewer): NavItem[] {
   return NAV[workspace].filter((item) => item.visible(v)).map(({ visible: _, ...item }) => item);
 }
 
+/** Whether the page at `pathname` is one this viewer may use; a path no navigation item owns opens as before. */
+export function canOpen(pathname: string, v: Viewer): boolean {
+  const first = `/${section(pathname)}`;
+  const item = [...NAV.access, ...NAV.admin].find((i) => i.to === first);
+  return item ? item.visible(v) : true;
+}
+
 export const REDIRECTS: Record<string, string> = { '/me': '/requests', '/fleet': '/clusters', '/overview': '/admin' };
 
 const TITLES: Record<string, string> = {

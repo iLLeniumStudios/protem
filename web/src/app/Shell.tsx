@@ -32,7 +32,8 @@ import {
 import { colorTransition, focusRing } from '../components/ui/cn';
 import { ProtemMark } from '../components/ui/Logo';
 import { useData } from './data';
-import { isApprover, navFor, pageTitle, roleLabel, workspaceOf, type Workspace } from './roles';
+import { NotFound } from './NotFound';
+import { canOpen, isApprover, navFor, pageTitle, roleLabel, workspaceOf, type Workspace } from './roles';
 import { waitingForYou } from './waiting';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -292,7 +293,7 @@ function Frame() {
           )}
         >
           {error && <LoadError message={error} />}
-          {loading ? <PageSkeleton /> : <Outlet />}
+          {loading ? <PageSkeleton /> : canOpen(pathname, data) ? <Outlet /> : <NotFound />}
         </main>
       </div>
     </div>

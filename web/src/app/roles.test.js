@@ -1,6 +1,6 @@
 // Run: cd web && bun test src/app
 import { expect, test } from 'bun:test';
-import { canViewFleet, isAdmin, isApprover, isMe, navFor, pageTitle, REDIRECTS, roleLabel, workspaceOf } from './roles';
+import { canOpen, canViewFleet, isAdmin, isApprover, isMe, navFor, pageTitle, REDIRECTS, roleLabel, workspaceOf } from './roles';
 
 const caps = (over = {}) => ({ management: false, profileNamespaces: [], manageClusters: false, viewFleet: false, viewAll: false, ...over });
 const viewer = (capabilities, ...canApprove) => ({ capabilities, profiles: canApprove.map((c) => ({ canApprove: c })) });
@@ -88,4 +88,20 @@ test('page titles follow the navigation labels', () => {
   expect(pageTitle('/clusters')).toBe('Clusters · Protem');
   expect(pageTitle('/profiles/ns/p/edit')).toBe('Editing profile · Protem');
   expect(pageTitle('/nowhere')).toBe('Page not found · Protem');
+});
+
+test('a page opens by address only for someone its navigation item shows to; other paths open as before', () => {
+  const requester = viewer(caps(), false);
+  for (const p of ['/admin', '/timeline', '/audit', '/clusters', '/clusters/', '/approvals', '/profiles']) expect(canOpen(p, requester)).toBe(false);
+  for (const p of ['/', '/request', '/request/ns/p', '/requests', '/requests/ns/x', '/grants/ns/x', '/nope']) expect(canOpen(p, requester)).toBe(true);
+
+  const approver = viewer(caps(), true);
+  expect(canOpen('/approvals', approver)).toBe(true);
+  expect(canOpen('/admin', approver)).toBe(false);
+
+  const admin = viewer(caps({ viewAll: true, viewFleet: true }));
+  for (const p of ['/admin', '/timeline', '/audit', '/clusters', '/approvals', '/profiles', '/profiles/ns/name']) expect(canOpen(p, admin)).toBe(true);
+
+  expect(canOpen('/profiles/ns/name', requester)).toBe(false);
+  expect(canOpen('/profiles/ns/name', viewer(caps({ management: true, profileNamespaces: ['ns'] })))).toBe(true);
 });
