@@ -2,21 +2,72 @@ apiVersion: v2
 name: protem
 description: Just-in-time privileged access management for Kubernetes, with time-bound, approval-gated access across every cluster.
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+# The release workflow sets both from the git tag when it packages the chart. From a checkout,
+# pass --set image.tag=<tag> to install an image that exists.
+version: 0.0.0-dev
+appVersion: "0.0.0-dev"
 kubeVersion: ">=1.30.0-0"
 home: https://github.com/iLLeniumStudios/protem
 sources:
   - https://github.com/iLLeniumStudios/protem
 icon: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/brand/web/protem-symbol-app-icon.svg
 keywords:
-  - access
+  - privileged-access-management
+  - just-in-time-access
   - rbac
-  - just-in-time
+  - access-management
   - multi-cluster
   - security
+  - operator
 maintainers:
   - name: iLLeniumStudios
     url: https://github.com/iLLeniumStudios
 annotations:
   artifacthub.io/license: Apache-2.0
+  artifacthub.io/category: security
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Basic Install
+  artifacthub.io/links: |
+    - name: Website
+      url: https://protem.dev
+    - name: Documentation
+      url: https://protem.dev/docs/
+    - name: Your first request
+      url: https://protem.dev/docs/getting-started/first-request/
+    - name: Security model
+      url: https://protem.dev/docs/architecture/security-model/
+  artifacthub.io/screenshots: |
+    - title: A request open for approval, with what the access allows
+      url: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/images/request-approval.png
+    - title: Who has access to which cluster, and until when
+      url: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/images/access-timeline.png
+    - title: A profile's rules, with the risky ones flagged
+      url: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/images/profile-permissions.png
+    - title: Clusters, their agents and the roles each allows
+      url: https://raw.githubusercontent.com/iLLeniumStudios/protem/main/docs/guides/images/clusters.png
+  artifacthub.io/crds: |
+    - kind: AccessProfile
+      version: v1alpha1
+      name: accessprofiles.protem.dev
+      displayName: Access profile
+      description: Something people can request, naming a role, where it applies, who may request it, for how long, and who approves.
+    - kind: AccessRequest
+      version: v1alpha1
+      name: accessrequests.protem.dev
+      displayName: Access request
+      description: One person asking for one profile, with a reason.
+    - kind: AccessGrant
+      version: v1alpha1
+      name: accessgrants.protem.dev
+      displayName: Access grant
+      description: Approved access with an end time. Created by the operator.
+    - kind: ClusterGrant
+      version: v1alpha1
+      name: clustergrants.protem.dev
+      displayName: Cluster grant
+      description: The part of a grant that one target cluster's agent applies. Created by the operator.
+    - kind: TargetCluster
+      version: v1alpha1
+      name: targetclusters.protem.dev
+      displayName: Target cluster
+      description: A cluster that access can be granted on.
