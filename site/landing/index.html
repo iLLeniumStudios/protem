@@ -86,24 +86,22 @@
           <div class="who"><span class="avatar">A</span><b>alice@company.com</b><span class="what"><code>edit</code> in payments on <code>prod-eu</code></span></div>
           <div class="left">
             <span class="c0"><small>2h requested</small>waiting for bob</span>
-            <span class="c1"><small>approved</small>ends in 2h 0m</span>
-            <span class="c2"><small>until 11:58</small>ends in 1h 10m</span>
-            <span class="c3"><small>until 11:58</small>ends in 24m</span>
+            <span class="c1"><small>until 11:58</small>ends in <span id="scene-left">1h 42m</span></span>
             <span class="c4"><small>access expired</small>ended at 11:58</span>
           </div>
         </div>
         <div class="track" aria-hidden="true">
-          <div class="tick tick-start" style="left:0"><span>09:00</span></div>
-          <div class="tick" style="left:25%"><span>10:00</span></div>
-          <div class="tick" style="left:50%"><span>11:00</span></div>
-          <div class="tick" style="left:75%"><span>12:00</span></div>
-          <div class="tick tick-end" style="left:100%"><span>13:00</span></div>
+          <div class="tick" style="--t:9"><span>09:00</span></div>
+          <div class="tick" style="--t:10"><span>10:00</span></div>
+          <div class="tick" style="--t:11"><span>11:00</span></div>
+          <div class="tick" style="--t:12"><span>12:00</span></div>
+          <div class="tick" style="--t:13"><span>13:00</span></div>
           <div class="window">
             <div class="inner">
-              <div class="used"></div>
+              <div class="used"><span>RoleBinding on prod-eu</span></div>
               <div class="pending">Requested 2h for INC-4821</div>
               <div class="fill"><span>RoleBinding on prod-eu</span></div>
-              <div class="gone"><s>RoleBinding</s> removed from prod-eu</div>
+              <div class="gone"><s>RoleBinding</s> removed at 11:58</div>
             </div>
             <span class="piece v-left"></span><span class="piece arm-top"></span>
             <span class="piece v-right"></span><span class="piece arm-bottom"></span>
@@ -607,6 +605,17 @@ protem-grant-protem-system.grant-alice-payments-edit    ClusterRole/edit   12m
       scene.classList.toggle("paused", !entries[0].isIntersecting);
     }).observe(scene);
   }
+  // The access lasts 2 h and runs from 15% to 78% of the loop, as the fill and now keyframes do.
+  var left = document.getElementById("scene-left");
+  var now = scene && scene.querySelector(".now");
+  var clock = left && now && now.getAnimations ? now.getAnimations()[0] : null;
+  if (clock) (function tick() {
+    var percent = (clock.effect.getComputedTiming().progress || 0) * 100;
+    var minutes = Math.round(120 * Math.min(1, Math.max(0, (78 - percent) / 63)));
+    var text = (minutes >= 60 ? Math.floor(minutes / 60) + "h " : "") + (minutes % 60) + "m";
+    if (left.textContent !== text) left.textContent = text;
+    requestAnimationFrame(tick);
+  })();
 })();
 </script>
 </body>

@@ -245,7 +245,9 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
 .hero .meta { font-size: 0.8125rem; color: var(--color-text-tertiary); margin-top: 1.25rem; }
 
-.scene { margin: 0; min-width: 0; }
+/* The window is placed by --wl and --ww; the bar inside it is the access itself, 09:58 to 11:58.
+   Ticks, the bar and the NOW line are all placed from these, so they agree at every width. */
+.scene { margin: 0; min-width: 0; --wl: 24.583%; --ww: 50%; --inset: 20px; --bar: calc(var(--ww) - 2 * var(--inset)); }
 .scene-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
 .who { display: flex; align-items: center; gap: 10px; font-size: 0.9375rem; color: var(--color-text-secondary); }
 .who b { color: var(--color-text); font-weight: 600; }
@@ -263,30 +265,31 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
 .left > .c1 { opacity: 1; }
 
 .track { position: relative; height: 176px; margin-top: 18px; overflow: hidden; }
-.tick { position: absolute; top: 0; bottom: 26px; border-left: 1px solid var(--color-border); }
+.tick {
+  position: absolute; top: 0; bottom: 26px; border-left: 1px solid var(--color-border);
+  left: calc(var(--wl) + var(--inset) + (var(--t) - 9.9667) / 2 * var(--bar));
+}
 .tick span {
   position: absolute; bottom: -24px; left: 0; transform: translateX(-50%);
   font-size: 0.75rem; color: var(--color-text-tertiary); white-space: nowrap;
 }
-.tick-start span { transform: none; }
-.tick-end span { transform: translateX(-100%); }
 
-.window { position: absolute; left: 24.583%; width: 50%; top: 20px; height: 120px; }
+.window { position: absolute; left: var(--wl); width: var(--ww); top: 20px; height: 120px; }
 .window .piece { position: absolute; background: var(--color-accent); }
 .v-left { left: 0; top: 0; bottom: 0; width: 12px; }
 .v-right { right: 0; top: 0; bottom: 0; width: 12px; }
 .arm-top { left: 0; top: 0; height: 12px; width: calc(100% - 32px); clip-path: inset(0 calc(100% - 60px) 0 0); }
 .arm-bottom { right: 0; bottom: 0; height: 12px; width: calc(100% - 32px); clip-path: inset(0 0 0 calc(100% - 60px)); }
-.inner { position: absolute; inset: 20px; }
-.used { position: absolute; inset: 0; background: var(--color-muted); }
-.fill {
-  position: absolute; inset: 0; background: var(--color-accent); color: var(--color-accent-ink);
-  display: flex; align-items: center; justify-content: flex-end; padding: 0 16px;
-  clip-path: inset(0 0 0 15%);
+.inner { position: absolute; inset: var(--inset); }
+/* The same label sits in both layers, so the edge between them passes through it instead of cutting it off. */
+.used, .fill {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding: 0 12px;
   font-weight: 600; font-size: 0.8125rem; white-space: nowrap; overflow: hidden;
 }
+.used { background: var(--color-muted); color: var(--color-text-secondary); }
+.fill { background: var(--color-accent); color: var(--color-accent-ink); clip-path: inset(0 0 0 15%); }
 .pending, .gone {
-  position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; padding: 0 12px;
   opacity: 0; color: var(--color-text-secondary); font-size: 0.8125rem; white-space: nowrap;
 }
 .pending { border: 2px dashed var(--color-border-strong); }
@@ -294,7 +297,7 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
 .gone s { text-decoration-thickness: 2px; color: var(--color-text-tertiary); }
 .now {
   position: absolute; top: 0; bottom: 26px; left: 0; width: 100%; pointer-events: none;
-  transform: translateX(calc(32.083% + 16px));
+  transform: translateX(calc(var(--wl) + var(--inset) + 0.15 * var(--bar)));
 }
 .now::before { content: ""; position: absolute; left: -1px; top: 16px; bottom: 0; width: 2px; background: var(--color-text); }
 .now span {
@@ -323,8 +326,6 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
   .scene .now { animation: now var(--loop) linear infinite; }
   .scene .c0 { animation: c0 var(--loop) step-end infinite; }
   .scene .c1 { animation: c1 var(--loop) step-end infinite; }
-  .scene .c2 { animation: c2 var(--loop) step-end infinite; }
-  .scene .c3 { animation: c3 var(--loop) step-end infinite; }
   .scene .c4 { animation: c4 var(--loop) step-end infinite; }
   .scene .st1 { animation: st1 var(--loop) step-end infinite; }
   .scene .st2 { animation: st2 var(--loop) step-end infinite; }
@@ -344,19 +345,17 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
 @keyframes used { 0%, 13% { opacity: 0; } 15%, 78% { opacity: 1; } 82%, 100% { opacity: 0; } }
 @keyframes pending { 0%, 10% { opacity: 1; } 14%, 100% { opacity: 0; } }
 @keyframes gone { 0%, 78% { opacity: 0; } 83%, 97% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes now { 0%, 10% { transform: translateX(23.75%); } 15%, 16% { transform: translateX(calc(24.583% + 26px)); } 78%, 100% { transform: translateX(calc(74.583% - 26px)); } }
+@keyframes now { 0%, 10% { transform: translateX(calc(var(--wl) + var(--inset) - var(--bar) / 60)); } 15% { transform: translateX(calc(var(--wl) + var(--inset))); } 78%, 100% { transform: translateX(calc(var(--wl) + var(--ww) - var(--inset))); } }
 @keyframes c0 { 0% { opacity: 1; } 11% { opacity: 0; } }
-@keyframes c1 { 0% { opacity: 0; } 11% { opacity: 1; } 25% { opacity: 0; } }
-@keyframes c2 { 0% { opacity: 0; } 25% { opacity: 1; } 55% { opacity: 0; } }
-@keyframes c3 { 0% { opacity: 0; } 55% { opacity: 1; } 78% { opacity: 0; } }
+@keyframes c1 { 0% { opacity: 0; } 11% { opacity: 1; } 78% { opacity: 0; } }
 @keyframes c4 { 0% { opacity: 0; } 78% { opacity: 1; } }
 @keyframes st1 { 0% { color: var(--color-text); } 11% { color: var(--color-text-tertiary); } }
-@keyframes st2 { 0% { color: var(--color-text-tertiary); } 11% { color: var(--color-text); } 20% { color: var(--color-text-tertiary); } }
-@keyframes st3 { 0% { color: var(--color-text-tertiary); } 20% { color: var(--color-text); } 78% { color: var(--color-text-tertiary); } }
+@keyframes st2 { 0% { color: var(--color-text-tertiary); } 11% { color: var(--color-text); } 15% { color: var(--color-text-tertiary); } }
+@keyframes st3 { 0% { color: var(--color-text-tertiary); } 15% { color: var(--color-text); } 78% { color: var(--color-text-tertiary); } }
 @keyframes st4 { 0% { color: var(--color-text-tertiary); } 78% { color: var(--color-text); } }
 @keyframes mark1 { 0% { background: var(--color-accent); border-color: var(--color-accent); } 11% { background: transparent; border-color: currentColor; } }
-@keyframes mark2 { 0% { background: transparent; border-color: currentColor; } 11% { background: var(--color-accent); border-color: var(--color-accent); } 20% { background: transparent; border-color: currentColor; } }
-@keyframes mark3 { 0% { background: transparent; border-color: currentColor; } 20% { background: var(--color-accent); border-color: var(--color-accent); } 78% { background: transparent; border-color: currentColor; } }
+@keyframes mark2 { 0% { background: transparent; border-color: currentColor; } 11% { background: var(--color-accent); border-color: var(--color-accent); } 15% { background: transparent; border-color: currentColor; } }
+@keyframes mark3 { 0% { background: transparent; border-color: currentColor; } 15% { background: var(--color-accent); border-color: var(--color-accent); } 78% { background: transparent; border-color: currentColor; } }
 @keyframes mark4 { 0% { background: transparent; border-color: currentColor; } 78% { background: var(--color-text); border-color: var(--color-text); } }
 @keyframes dash { to { stroke-dashoffset: 20; } }
 
@@ -649,9 +648,11 @@ html[data-theme="dark"] .icon-button .i-sun { display: block; }
   .site-header nav ul { gap: 1rem; }
   .hero { padding: 1.75rem 0 1.75rem; }
   .scene-head { flex-direction: column; align-items: start; gap: 10px; }
+  .who { display: grid; grid-template-columns: auto 1fr; row-gap: 4px; }
+  .what { grid-column: 1 / -1; }
   .left { text-align: left; }
   .features { grid-template-columns: 1fr; gap: 1.25rem; }
-  .window { left: 10%; width: 70%; }
+  .scene { --wl: 10%; --ww: 70%; }
   .stages { grid-template-columns: 1fr 1fr; }
   .bento { grid-template-columns: 1fr; }
   .t-ends, .t-git, .t-rbac { grid-column: auto; }
