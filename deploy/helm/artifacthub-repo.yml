@@ -1,0 +1,4 @@
+# Artifact Hub repository metadata for the chart at oci://ghcr.io/illeniumstudios/charts/protem.
+# The ID is the one Artifact Hub shows on the repository's card; matching it marks the
+# repository as a verified publisher. .github/workflows/artifacthub.yml pushes this file.
+repositoryID: 5bf0696d-a1f5-45cd-befa-9ea978e3c0b5
