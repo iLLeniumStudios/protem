@@ -4,7 +4,7 @@ import { errorMessage } from '../../api';
 import { useData } from '../../app/data';
 import { formatClock } from '../../app/format';
 import type { ClusterView, JoinView } from '../../generated/views';
-import { Button, cn, useToast } from '../../components/ui';
+import { Button, Identifier, cn, useToast } from '../../components/ui';
 import { focusRing } from '../../components/ui/cn';
 import { agentJoined, joinCountdown } from './enrol';
 
@@ -107,7 +107,8 @@ export interface ConnectAgentProps {
 }
 
 export function ConnectAgent({ join, joined, onJoin, introRef }: ConnectAgentProps) {
-  const { actions } = useData();
+  const { actions, clusters } = useData();
+  const boundAs = clusters.find((c) => c.name === join.cluster)?.boundAs;
   const now = useSecondTick();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +170,16 @@ export function ConnectAgent({ join, joined, onJoin, introRef }: ConnectAgentPro
             </p>
           </div>
         </>
+      )}
+      {joined && boundAs && (
+        <div className="flex flex-col gap-3">
+          <p className="text-body font-medium text-text">Check how this cluster names you</p>
+          <Block title="Check command" text="kubectl auth whoami" />
+          <p className="min-w-0 text-body text-text-secondary">
+            It should print <Identifier className="text-text">{boundAs}</Identifier>. If it prints something else, change Subject in this
+            cluster's settings; otherwise grants here will show as active but give no access.
+          </p>
+        </div>
       )}
     </div>
   );

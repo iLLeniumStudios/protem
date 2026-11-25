@@ -1,6 +1,6 @@
 // Run: cd web && bun test src/pages/fleet
 import { expect, test } from 'bun:test';
-import { settingsChange, settingsForm } from './settings';
+import { boundAs, settingsChange, settingsForm } from './settings';
 
 const cluster = (over = {}) => ({
   name: 'prod-eu',
@@ -76,4 +76,14 @@ test('clearing a subject sends an empty one, meaning the hub default', () => {
   expect(settingsChange(c, { ...settingsForm(c), subject: '  ' })).toEqual({ payload: { subject: '' }, errors: {} });
   const unset = cluster({ subject: undefined });
   expect(settingsChange(unset, { ...settingsForm(unset), subject: '' })).toEqual({ payload: {}, errors: {} });
+});
+
+test('the bound name follows the server: empty is the email, placeholders filled, literal text kept', () => {
+  const alice = { email: 'alice@company.com', username: 'alice' };
+  expect(boundAs('', alice)).toBe('alice@company.com');
+  expect(boundAs('oidc:{{.Email}}', alice)).toBe('oidc:alice@company.com');
+  expect(boundAs('{{.Username}}', alice)).toBe('alice');
+  expect(boundAs('aks:{{.Username}}', { email: 'bob@company.com', username: 'bob' })).toBe('aks:bob');
+  expect(boundAs('{{.Email}}', { email: '', username: 'alice' })).toBe('alice');
+  expect(boundAs('static', alice)).toBe('alice@company.com');
 });

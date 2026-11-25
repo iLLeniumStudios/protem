@@ -68,3 +68,10 @@ export function settingsChange(
 
   return { payload, errors };
 }
+
+/** The Kubernetes user name a subject template gives a person, rendered as the server's binding.FormatSubject does. */
+export function boundAs(template: string, person: { email: string; username: string }): string {
+  const tmpl = template || '{{.Email}}';
+  const name = tmpl.split('{{.Email}}').join(person.email).split('{{.Username}}').join(person.username);
+  return name && name !== tmpl ? name : person.email || person.username;
+}

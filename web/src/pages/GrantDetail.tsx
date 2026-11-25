@@ -11,6 +11,7 @@ import {
   RelativeTime,
   Skeleton,
   StatusPill,
+  QuietLine,
   TBody,
   TD,
   TH,
@@ -23,10 +24,12 @@ import {
 import { formatTimestamp } from '../components/ui/format';
 import { profileName, requestPath } from '../app/format';
 import { Fact, Facts, IdList, LoadFailed, RevokeGrant, Unavailable } from './access/parts';
+import { linkClass } from './access/RequestRows';
 import { Permissions } from './permissions/Permissions';
 import { ProfileLink } from './profiles/ProfileLink';
 
 const bindingText = (b: BindingView) => `${b.kind} ${b.namespace ? `${b.namespace}/` : ''}${b.name}`;
+const NO_ACCESS_RUNBOOK = 'https://protem.dev/docs/operations/runbooks/how-to-fix-a-grant-that-gives-no-access/';
 
 function ClusterPermissions({ grant }: { grant: GrantView }) {
   const perms = useLive(() => api.getGrantPermissions(grant.namespace, grant.name), [grant.namespace, grant.name]);
@@ -64,6 +67,16 @@ function ClusterPermissions({ grant }: { grant: GrantView }) {
                   <IdList items={(c.bindings ?? []).map(bindingText)} empty="None" />
                 </Fact>
               </Facts>
+              {c.state === 'Active' && c.subject && (
+                <QuietLine>
+                  If kubectl refuses this access, run <code className="font-mono">kubectl auth whoami</code> on{' '}
+                  <Identifier>{c.cluster}</Identifier> and compare it with this name.{' '}
+                  <a href={NO_ACCESS_RUNBOOK} target="_blank" rel="noreferrer" className={linkClass}>
+                    Fix a grant that gives no access
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </QuietLine>
+              )}
               <Permissions
                 view={c.permissions}
                 label={`Permission rules on ${c.cluster}`}

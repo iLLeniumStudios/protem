@@ -3,14 +3,14 @@ import { Lock, TriangleAlert } from 'lucide-react';
 import { errorMessage } from '../../api';
 import { useData } from '../../app/data';
 import type { ClusterView } from '../../generated/views';
-import { Button, Checkbox, Dialog, ErrorBanner, Field, Input, useToast } from '../../components/ui';
+import { Button, Checkbox, Dialog, ErrorBanner, Field, Identifier, Input, useToast } from '../../components/ui';
 import { IdList } from '../access/parts';
 import { KeyValueRows } from '../profiles/KeyValueRows';
-import { settingsChange, settingsForm, type SettingsForm } from './settings';
+import { boundAs, settingsChange, settingsForm, type SettingsForm } from './settings';
 
 /** The settings dialog; its form starts from the cluster as it is each time the dialog opens. */
 export function ClusterSettings({ cluster, open, onOpenChange }: { cluster: ClusterView; open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { actions } = useData();
+  const { actions, me } = useData();
   const { toast } = useToast();
   const ids = useId();
   const formRef = useRef<HTMLFormElement>(null);
@@ -34,6 +34,9 @@ export function ClusterSettings({ cluster, open, onOpenChange }: { cluster: Clus
   const { payload, errors } = settingsChange(opened, form);
   const shown = submitted ? errors : {};
   const title = cluster.displayName || cluster.name;
+  const subject = form.subject.trim();
+  const boundName =
+    subject === (opened.subject ?? '') ? opened.boundAs : boundAs(subject, { email: me?.email ?? '', username: me?.username ?? '' });
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -106,6 +109,14 @@ export function ClusterSettings({ cluster, open, onOpenChange }: { cluster: Clus
               mono
               onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
             />
+            <div className="flex min-w-0 flex-col gap-1 text-caption text-text-secondary">
+              <p className="min-w-0">
+                You would be bound as <Identifier className="text-text">{boundName}</Identifier>
+              </p>
+              <p>
+                Run <code className="font-mono">kubectl auth whoami</code> on this cluster; it should print this name.
+              </p>
+            </div>
           </Field>
           <KeyValueRows
             id={`${ids}-labels`}
