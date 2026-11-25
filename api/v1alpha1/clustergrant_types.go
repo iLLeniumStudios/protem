@@ -95,7 +95,7 @@ type ClusterGrantStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=cgrant;clgrant
 // +kubebuilder:printcolumn:name="Profile",type=string,JSONPath=`.spec.profileRef`
-// +kubebuilder:printcolumn:name="Requester",type=string,JSONPath=`.spec.requester.email`
+// +kubebuilder:printcolumn:name="Requester",type=string,JSONPath=`.spec.requester.username`
 // +kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role.name`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Expires At",type=string,JSONPath=`.spec.expiresAt`

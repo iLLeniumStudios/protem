@@ -20,7 +20,7 @@ spec:
     - jsonPath: .spec.profileRef
       name: Profile
       type: string
-    - jsonPath: .spec.requester.email
+    - jsonPath: .spec.requester.username
       name: Requester
       type: string
     - jsonPath: .status.phase
@@ -97,7 +97,6 @@ spec:
                   username:
                     type: string
                 required:
-                - email
                 - username
                 type: object
             required:

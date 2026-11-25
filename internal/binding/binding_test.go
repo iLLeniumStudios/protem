@@ -292,6 +292,7 @@ func TestFormatSubject(t *testing.T) {
 		{"prefixed email", "oidc:{{.Email}}", alice, "oidc:alice@company.com"},
 		{"username", "{{.Username}}", alice, aliceUsername},
 		{"empty email falls back to username", "{{.Email}}", protemv1alpha1.RequesterInfo{Username: aliceUsername}, aliceUsername},
+		{"empty email inside a prefix falls back to username, not to a bare prefix", "oidc:{{.Email}}", protemv1alpha1.RequesterInfo{Username: aliceUsername}, "oidc:alice"},
 		{"template without placeholders falls back to email", "static", alice, aliceEmail},
 		{"template without placeholders and no email falls back to username", "static", protemv1alpha1.RequesterInfo{Username: aliceUsername}, aliceUsername},
 	} {

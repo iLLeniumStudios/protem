@@ -51,8 +51,8 @@ type TargetClusterSpec struct {
 	// +optional
 	Enforcement EnforcementMode `json:"enforcement,omitempty"`
 
-	// Subject defines the username mapping template on this cluster (e.g. {{.Email}} or oidc:{{.Email}})
-	// +kubebuilder:default="{{.Email}}"
+	// Subject is the template for the user name people are bound as on this cluster, e.g. {{.Email}} or
+	// oidc:{{.Username}}. Empty means the operator's subject template. Ignored for the hub's own cluster.
 	// +optional
 	Subject string `json:"subject,omitempty"`
 

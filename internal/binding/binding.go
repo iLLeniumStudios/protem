@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -148,7 +149,7 @@ func FormatSubject(tmpl string, r protemv1alpha1.RequesterInfo) string {
 	if tmpl == "" {
 		tmpl = "{{.Email}}"
 	}
-	res := strings.ReplaceAll(tmpl, "{{.Email}}", r.Email)
+	res := strings.ReplaceAll(tmpl, "{{.Email}}", cmp.Or(r.Email, r.Username))
 	res = strings.ReplaceAll(res, "{{.Username}}", r.Username)
 	if res == "" || res == tmpl {
 		if r.Email != "" {

@@ -21,7 +21,7 @@ AccessGrant represents an active, time-bound access lease for a user.
 | `spec.profileRef` | string | yes |  |  |  | ProfileRef is the name of the AccessProfile in the same namespace |
 | `spec.requestRef` | string | yes |  |  |  | RequestRef is the name of the AccessRequest in the same namespace |
 | `spec.requester` | object | yes |  |  |  | Requester is the snapshot of the user identity |
-| `spec.requester.email` | string | yes |  |  |  |  |
+| `spec.requester.email` | string | no |  |  |  |  |
 | `spec.requester.groups` | []string | no |  |  |  |  |
 | `spec.requester.username` | string | yes |  |  |  |  |
 | `spec.revocation` | object | no |  |  |  | Revocation is set when access is revoked early; presence indicates revoked state |
@@ -139,7 +139,7 @@ AccessRequest represents a user request for temporary privileged access.
 | `spec.namespaces` | []string | no |  |  |  | Namespaces requests a subset of the profile's namespaces |
 | `spec.profileRef` | string | yes |  |  |  | ProfileRef is the name of the AccessProfile in the same namespace |
 | `spec.requester` | object | yes |  |  |  | Requester is stamped from request.userInfo by admission/operator |
-| `spec.requester.email` | string | yes |  |  |  |  |
+| `spec.requester.email` | string | no |  |  |  |  |
 | `spec.requester.groups` | []string | no |  |  |  |  |
 | `spec.requester.username` | string | yes |  |  |  |  |
 | `status` | object | no |  |  |  | AccessRequestStatus defines the observed state of AccessRequest. |
@@ -192,7 +192,7 @@ ClusterGrant represents a single-cluster slice of an AccessGrant, living in prot
 | `spec.namespaces` | []string | no |  |  |  | Namespaces targeted by this grant on this cluster |
 | `spec.profileRef` | string | yes |  |  |  | ProfileRef is the AccessProfile name |
 | `spec.requester` | object | yes |  |  |  | Requester is the snapshot of the user identity |
-| `spec.requester.email` | string | yes |  |  |  |  |
+| `spec.requester.email` | string | no |  |  |  |  |
 | `spec.requester.groups` | []string | no |  |  |  |  |
 | `spec.requester.username` | string | yes |  |  |  |  |
 | `spec.revocation` | object | no |  |  |  | Revocation details if revoked early |
@@ -234,7 +234,7 @@ TargetCluster represents a managed spoke Kubernetes cluster registered with the 
 | `spec.displayName` | string | yes |  |  |  |  |
 | `spec.enforcement` | string | no | `"RoleBinding"` | `"RoleBinding"`, `"Authorizer"` |  | Enforcement selects the enforcement mechanism on this cluster (default: RoleBinding) |
 | `spec.paused` | boolean | no | `false` |  |  | Paused suspends new elevation leases on this cluster for maintenance |
-| `spec.subject` | string | no | `"{{.Email}}"` |  |  | Subject defines the username mapping template on this cluster (e.g. {{.Email}} or oidc:{{.Email}}) |
+| `spec.subject` | string | no |  |  |  | Subject is the template for the user name people are bound as on this cluster, e.g. {{.Email}} or oidc:{{.Username}}. Empty means the operator's subject template. Ignored for the hub's own cluster. |
 | `status` | object | no |  |  |  | TargetClusterStatus defines the observed health and connectivity of the cluster. |
 | `status.activeGrantsCount` | integer | no |  |  |  | ActiveGrantsCount tracks currently active leases on this cluster |
 | `status.agentVersion` | string | no |  |  |  | AgentVersion reports the running spoke agent version |

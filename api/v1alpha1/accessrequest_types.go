@@ -34,9 +34,10 @@ const (
 
 // RequesterInfo contains authenticated identity info of the requester.
 type RequesterInfo struct {
-	Username string   `json:"username"`
-	Email    string   `json:"email"`
-	Groups   []string `json:"groups,omitempty"`
+	Username string `json:"username"`
+	// +optional
+	Email  string   `json:"email,omitempty"`
+	Groups []string `json:"groups,omitempty"`
 }
 
 // RequestJustification records the business justification and ticket reference.
@@ -170,7 +171,7 @@ type AccessRequestStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=areq
 // +kubebuilder:printcolumn:name="Profile",type=string,JSONPath=`.spec.profileRef`
-// +kubebuilder:printcolumn:name="Requester",type=string,JSONPath=`.spec.requester.email`
+// +kubebuilder:printcolumn:name="Requester",type=string,JSONPath=`.spec.requester.username`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Duration",type=string,JSONPath=`.status.resolved.duration`
 // +kubebuilder:printcolumn:name="Grant",type=string,JSONPath=`.status.grantRef`

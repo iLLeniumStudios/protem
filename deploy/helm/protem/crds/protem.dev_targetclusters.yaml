@@ -77,9 +77,9 @@ spec:
                   for maintenance
                 type: boolean
               subject:
-                default: '{{.Email}}'
-                description: Subject defines the username mapping template on this
-                  cluster (e.g. {{.Email}} or oidc:{{.Email}})
+                description: |-
+                  Subject is the template for the user name people are bound as on this cluster, e.g. {{.Email}} or
+                  oidc:{{.Username}}. Empty means the operator's subject template. Ignored for the hub's own cluster.
                 type: string
             required:
             - displayName
