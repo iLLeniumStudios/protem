@@ -2,7 +2,7 @@
 
 Put oauth2-proxy in front of a hub installed with the Helm chart in `deploy/helm/protem`, reached at a hostname over HTTPS, and sign people in with Microsoft Entra ID.
 
-**Tested:** this guide was followed end to end on 2026-11-25 against a real Entra ID tenant on the Free tier, with the hub and a separate target cluster on AKS (Kubernetes 1.36, Microsoft Entra integration with Kubernetes RBAC), and again with the hub and a separate target cluster on two EKS clusters (Kubernetes 1.37, eu-north-1). Not tested: group-based assignment with P1 or P2, guest accounts, people in more than 200 groups, and Conditional Access or MFA policies.
+**Tested:** this guide was followed end to end on 2026-11-25 against a real Entra ID tenant on the Free tier, with the hub and a separate target cluster on AKS (Kubernetes 1.36, Microsoft Entra integration with Kubernetes RBAC), again with the hub and a separate target cluster on two EKS clusters (Kubernetes 1.37, eu-north-1), and again on GKE (Kubernetes 1.36, a Standard hub and an Autopilot target), all on 0.1.5 for the GKE run. Not tested: group-based assignment with P1 or P2, guest accounts, people in more than 200 groups, and Conditional Access or MFA policies.
 
 ## Register the application
 
@@ -29,6 +29,24 @@ The hub resolves email as `email`, then `preferred_username`, then `sub`; and us
 
 Add the optional claim anyway, even though oauth2-proxy's `oidc` provider already requests the `email` scope by default ([`oidc.go`](https://github.com/oauth2-proxy/oauth2-proxy/blob/v7.12.0/providers/oidc.go)): a member with no mailbox attribute still gets no `email` claim either way, and when oauth2-proxy's session ends up with no email at all, it refuses the login outright with "neither the id_token nor the profileURL set an email" — the hub never sees that person's token, independent of what the hub itself would have accepted. Add `--oidc-email-claim=preferred_username` to `authProxy.extraArgs` as a fallback so that login still succeeds for such members, falling back to `preferred_username` as the proxy's email.
 
+Even with the optional claim added, Entra ID omits `email` for a user whose `mail` attribute is
+in a domain the tenant has not verified: a Google Workspace address is a common example, since a
+tenant's free default domain does not cover it. The hub then falls back to
+`preferred_username`, so `{{.Email}}` renders the UPN instead. A tenant whose own domain is
+verified should emit the claim for a `mail` in that domain with no further change (not tested
+here). To emit it anyway, set `authenticationBehaviors.removeUnverifiedEmailClaim` to `false` on
+the application ([Manage application authenticationBehaviors](https://learn.microsoft.com/en-us/graph/applications-authenticationbehaviors), Microsoft Graph beta):
+
+```sh
+az rest --method PATCH --uri "https://graph.microsoft.com/beta/applications/<application object id>" \
+  --body '{"authenticationBehaviors":{"removeUnverifiedEmailClaim":false}}'
+```
+
+**Caution:** with this set, whoever can change a user's `mail` attribute (an admin) chooses which
+address that person is bound as everywhere `{{.Email}}` is used, including on other clusters. A
+verified domain is the right fix for production; use this override only where that is not
+possible.
+
 ## Restrict who can sign in
 
 Under **Enterprise applications**, find the app, open **Properties**, and set **Assignment required?** to **Yes** ([restrict your app to a set of users](https://learn.microsoft.com/en-us/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users)); this works on the Free tier. A freshly registered app does not require assignment by default, so skipping this step leaves every tenant member able to sign in regardless of who is listed below. From the CLI: `az ad sp update --id <service principal id> --set appRoleAssignmentRequired=true`. Then, under **Users and groups**, choose **Add user/group** and assign the people who should reach the hub (and groups, if you have P1 or P2). Conditional access policies and MFA requirements that apply to other applications in the tenant apply here too.
@@ -47,6 +65,11 @@ kubectl -n protem-system create secret generic oauth2-proxy \
 ```
 
 The chart reads those keys, `client-secret` and `cookie-secret`, from `authProxy.existingSecret`.
+
+Testing only: if `authProxy.publicURL` is a plain `http://localhost` address (for example behind
+`kubectl port-forward`), add `--cookie-secure=false` to `authProxy.extraArgs`. oauth2-proxy marks
+its session cookie `Secure` by default, which a browser refuses to send back over plain HTTP.
+Entra ID accepts an `http://localhost` redirect URI for this case.
 
 Write `values.yaml`:
 
@@ -130,6 +153,10 @@ spec:
 ```
 
 Use `{{.Username}}`: the hub reads it from `preferred_username`, which for a member of the tenant is the UPN. `{{.Email}}` gives the same string only while the person has no `mail` attribute. Once they have one that differs from the UPN, `{{.Email}}` produces a binding for a name AKS never uses: the grant shows as active and gives no access, with no error anywhere. Set the chart's `subjectTemplate` the same way, as above; it names people in bindings on the hub itself and in the hub's own permission checks. For a cluster that authenticates some other way (its own OIDC issuer, a service account token, or local RBAC), match its `subject` to however it names the same email or username instead. On EKS, names and prefixes work differently again: see [How to match user names on EKS](how-to-match-user-names-on-eks.md).
+
+On GKE, the subject stays `{{.Email}}` (GKE's own default), and the Entra user's `mail` must be
+their Google identity's email, so the two systems agree on the same string: see
+[How to match user names on GKE](how-to-match-user-names-on-gke.md).
 
 ## Check it works
 

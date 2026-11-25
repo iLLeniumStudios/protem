@@ -124,7 +124,10 @@ kubectl --context prod-eu apply -k clusters/prod-eu-agent
 ```
 
 The hub must be reachable from the target cluster at the `server` address in that kubeconfig.
-Within a minute the cluster shows as Ready on the hub's Clusters page, and its Lease is fresh:
+Within a minute the cluster shows as Ready on the hub's Clusters page, and its Lease is fresh.
+On a cluster that starts with no nodes to schedule onto (a fresh GKE Autopilot cluster, for
+example), the agent's pod stays `Pending` until a node scales up first; that wait was 3m20s in
+one such run, well inside the join token's lifetime but not "within a minute".
 
 ```sh
 kubectl --context hub get targetcluster prod-eu
@@ -177,7 +180,9 @@ files install; see [Operator flags](../reference/operator-flags.md).
 
 The join token works for `--join-token-ttl` (default 15 minutes, allowed 10m to 1h), so run the
 command soon. The agent replaces the join token with its own renewing token once a third of the
-token's life has passed, about five minutes after it starts with the default.
+token's life has passed, counted from when the hub issued it, not from when the agent starts —
+if the dialog sat open for a while before you applied the files, the renewal comes sooner after
+the agent's own start than the one-third figure suggests.
 If the token runs out first, open the cluster's actions menu, choose **Connect agent**, and apply
 the new files.
 

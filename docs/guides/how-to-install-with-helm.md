@@ -80,9 +80,9 @@ right now". Other clusters are added with an agent: see
 [How to connect a target cluster](how-to-connect-a-target-cluster.md).
 
 The hub always binds people on its own cluster with `subjectTemplate`, ignoring that
-`TargetCluster`'s own `spec.subject`: the API refuses to set it there, and the UI shows the field
-read-only for this cluster. On every other cluster, an empty `spec.subject` falls back to that
-same `subjectTemplate`.
+`TargetCluster`'s own `spec.subject`: the API refuses to set it there. With the chart
+registering the hub (the default), the UI shows no settings for it at all — no actions menu, no
+Subject field to look read-only — only a badge marking it as managed by Helm.
 
 ## Example: login with the bundled auth proxy
 
