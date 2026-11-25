@@ -167,7 +167,8 @@ files install; see [Operator flags](../reference/operator-flags.md).
 3. In that directory, run `kubectl apply -k .` against the target cluster.
 
 The join token works for `--join-token-ttl` (default 15 minutes, allowed 10m to 1h), so run the
-command soon. The agent replaces the join token with its own renewing token as soon as it starts.
+command soon. The agent replaces the join token with its own renewing token once a third of the
+token's life has passed, about five minutes after it starts with the default.
 If the token runs out first, open the cluster's actions menu, choose **Connect agent**, and apply
 the new files.
 

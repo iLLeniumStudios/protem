@@ -2,7 +2,7 @@
 
 Put oauth2-proxy in front of a hub installed with the Helm chart in `deploy/helm/protem`, reached at a hostname over HTTPS, and sign people in with Microsoft Entra ID.
 
-**Note:** this guide is written from Microsoft's and oauth2-proxy's documentation; Protem's login flow has been run end to end with a generic OIDC issuer, not against a real Entra ID tenant.
+**Tested:** this guide was followed end to end on 2026-11-25 against a real Entra ID tenant on the Free tier, with the hub and a separate target cluster on AKS (Kubernetes 1.36, Microsoft Entra integration with Kubernetes RBAC). Not tested: group-based assignment with P1 or P2, guest accounts, people in more than 200 groups, and Conditional Access or MFA policies.
 
 ## Register the application
 
@@ -11,6 +11,7 @@ Put oauth2-proxy in front of a hub installed with the Helm chart in `deploy/helm
 3. Under **Redirect URI**, choose **Web** and enter `https://<your UI host>/oauth2/callback`: this is the path oauth2-proxy redeems in both the Helm chart (`--redirect-url=<authProxy.publicURL>/oauth2/callback`) and `config/auth-proxy/manager_patch.yaml`, and it must match exactly ([add a redirect URI](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-redirect-uri)).
 4. Record the **Application (client) ID** and the **Directory (tenant) ID** from the app's **Overview** page.
 5. Under **Certificates & secrets** > **Client secrets**, create a new client secret and record its **Value** immediately; it is not shown again ([add credentials](https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials)).
+6. Under **API permissions**, select **Grant admin consent** for your tenant. Without it, people who sign in see Entra ID's "Need admin approval" screen instead of the UI, even though the app asks for nothing beyond sign-in.
 
 The hub verifies the ID token's issuer against `--oidc-issuer-url`, so use the v2.0 endpoint for both the app and the hub: `https://login.microsoftonline.com/<tenant id>/v2.0`. Entra ID issues v1.0 or v2.0 ID tokens depending on the endpoint used to request them ([ID token claims](https://learn.microsoft.com/en-us/entra/identity-platform/id-token-claims-reference)); the v2.0 endpoint's discovery document reports `issuer` as `https://login.microsoftonline.com/<tenant id>/v2.0`, which is what oauth2-proxy's `--oidc-issuer-url` and the hub's `--oidc-issuer-url` must both be set to.
 
@@ -30,7 +31,7 @@ Add the optional claim anyway, even though oauth2-proxy's `oidc` provider alread
 
 ## Restrict who can sign in
 
-Under **Enterprise applications**, find the app, open **Properties**, and set **Assignment required?** to **Yes** ([restrict your app to a set of users](https://learn.microsoft.com/en-us/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users)); this works on the Free tier. Then, under **Users and groups**, assign the people who should reach the hub (and groups, if you have P1 or P2). Conditional access policies and MFA requirements that apply to other applications in the tenant apply here too.
+Under **Enterprise applications**, find the app, open **Properties**, and set **Assignment required?** to **Yes** ([restrict your app to a set of users](https://learn.microsoft.com/en-us/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users)); this works on the Free tier. Then, under **Users and groups**, choose **Add user/group** and assign the people who should reach the hub (and groups, if you have P1 or P2). Conditional access policies and MFA requirements that apply to other applications in the tenant apply here too.
 
 ## Install or upgrade Protem
 
@@ -53,12 +54,14 @@ Write `values.yaml`:
 oidc:
   issuerURL: https://login.microsoftonline.com/<tenant id>/v2.0
   clientID: <application (client) id>
+subjectTemplate: '{{.Username}}'             # the UPN, which is how AKS names an Entra ID member
 authProxy:
   enabled: true
   publicURL: https://protem.example.com
   existingSecret: oauth2-proxy
   extraArgs:
-  - --oidc-email-claim=preferred_username   # fallback for members with no mail attribute
+  - --scope=openid email profile offline_access   # Entra ID returns a refresh token only with offline_access
+  - --oidc-email-claim=preferred_username        # fallback for members with no mail attribute
 ingress:
   enabled: true
   className: nginx
@@ -75,6 +78,8 @@ Install or upgrade:
 helm upgrade --install protem oci://ghcr.io/illeniumstudios/charts/protem \
   --namespace protem-system --create-namespace -f values.yaml
 ```
+
+Do not leave out `offline_access`. Without it Entra ID gives the proxy no refresh token, so the proxy cannot renew a session: someone removed from a group keeps that group in the hub until their next full sign-in, about an hour later. With it, the change reached the hub about four minutes after the removal, at the proxy's next refresh.
 
 ## Use Entra groups in profiles
 
@@ -121,13 +126,15 @@ Set `TargetCluster.spec.subject` for that cluster to match:
 
 ```yaml
 spec:
-  subject: '{{.Email}}'   # or '{{.Username}}' if the hub resolves the person's UPN there
+  subject: '{{.Username}}'
 ```
 
-Use whichever of `{{.Email}}` or `{{.Username}}` the hub actually resolves to that person's UPN for this tenant (see [Claims](../reference/authentication.md#claims)); if neither does, change the app registration's optional claims rather than the subject template. For a cluster that authenticates some other way (its own OIDC issuer, a service account token, or local RBAC), match its `subject` to however it names the same email or username instead.
+Use `{{.Username}}`: the hub reads it from `preferred_username`, which for a member of the tenant is the UPN. `{{.Email}}` gives the same string only while the person has no `mail` attribute. Once they have one that differs from the UPN, `{{.Email}}` produces a binding for a name AKS never uses: the grant shows as active and gives no access, with no error anywhere. Set the chart's `subjectTemplate` the same way, as above; it names people in bindings on the hub itself and in the hub's own permission checks. For a cluster that authenticates some other way (its own OIDC issuer, a service account token, or local RBAC), match its `subject` to however it names the same email or username instead.
 
 ## Check it works
 
 Open `https://<your UI host>` and sign in. On success, the UI loads instead of showing a sign-in redirect loop. To see the claims the hub resolved for the signed-in person, call `GET /api/me` (handled in `internal/api/server.go`), which returns the username, email, groups and roles the hub read from the token.
+
+To grant access on the hub's own cluster, register it first: see [Register the hub cluster](how-to-install-with-helm.md#register-the-hub-cluster). Then confirm a binding works for a real person: have them request a profile, and once it is active run `kubectl auth whoami` as them on the target cluster and compare the user name with the subject of the `RoleBinding` Protem created.
 
 If the UI shows "You're signed out" right after a successful login, see [How to fix "You're signed out" after login](../operations/runbooks/how-to-fix-signed-out-after-login.md).

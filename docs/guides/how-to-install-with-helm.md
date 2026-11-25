@@ -57,6 +57,26 @@ helm show values oci://ghcr.io/illeniumstudios/charts/protem
 Any other operator flag goes in `extraArgs`, and any other oauth2-proxy flag in
 `authProxy.extraArgs`.
 
+## Register the hub cluster
+
+Installing the chart does not register any cluster, the hub included. To grant access on the hub
+itself, apply a `TargetCluster` whose name is `hubClusterName`:
+
+```yaml
+apiVersion: protem.dev/v1alpha1
+kind: TargetCluster
+metadata:
+  name: local
+  labels:
+    env: dev
+spec:
+  displayName: Hub cluster
+```
+
+Until it exists, a profile that targets the hub shows "None of this profile's clusters is ready
+right now". Other clusters are added with an agent: see
+[How to connect a target cluster](how-to-connect-a-target-cluster.md).
+
 ## Example: login with the bundled auth proxy
 
 Register an OIDC client with your identity provider with the redirect URI

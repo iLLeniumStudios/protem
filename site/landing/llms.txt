@@ -2,7 +2,7 @@
 
 > Protem is open-source just-in-time privileged access management for Kubernetes. People request a role for a few hours, an approver sees what the role allows, and an agent on each target cluster creates an ordinary RoleBinding and removes it when the time is up. One hub cluster serves many target clusters, and everything is a Kubernetes custom resource.
 
-Protem is a Kubernetes operator with a web UI, licensed Apache-2.0. Its API group is `protem.dev/v1alpha1`. It installs with Helm (`oci://ghcr.io/illeniumstudios/charts/protem`) or OLM, and needs Kubernetes 1.30 or later on the hub. It does not proxy or record `kubectl` sessions and cannot end an exec that is already open. It has been run on kind and k3d, and has had no independent security review.
+Protem is a Kubernetes operator with a web UI, licensed Apache-2.0. Its API group is `protem.dev/v1alpha1`. It installs with Helm (`oci://ghcr.io/illeniumstudios/charts/protem`) or OLM, and needs Kubernetes 1.30 or later on the hub. It does not proxy or record `kubectl` sessions and cannot end an exec that is already open. It has been run on kind, k3d and AKS with Microsoft Entra ID sign-in, not on EKS or GKE, and has had no independent security review.
 
 ## Start here
 

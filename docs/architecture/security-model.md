@@ -54,7 +54,7 @@ No new access can be requested or approved. Access already on a cluster still en
 - **Clocks that disagree.** Expiry is judged by the target cluster's clock. Keep clocks synchronised.
 - **Supply chain.** Images are not signed and no bill of materials is published yet.
 
-Protem has not had an independent security review, and has been run on k3d only, not yet on a managed Kubernetes service.
+Protem has not had an independent security review. It has been run on kind, k3d and AKS (with Microsoft Entra ID sign-in), not yet on EKS or GKE.
 
 ## Reporting a vulnerability
 
