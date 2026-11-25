@@ -375,8 +375,13 @@ func (s *Server) activeGrantCounts(ctx context.Context) (map[string]int, error) 
 
 // clusterView reports the agent's Lease renewal as the heartbeat: the controller writes
 // status.lastHeartbeat only when readiness changes.
-func (s *Server) clusterView(ctx context.Context, c *protemv1alpha1.TargetCluster, activeGrants int) ClusterView {
+func (s *Server) clusterView(ctx context.Context, c *protemv1alpha1.TargetCluster, activeGrants int, user UserInfo) ClusterView {
 	view := toClusterView(c, activeGrants)
+	template := cmp.Or(c.Spec.Subject, s.SubjectTemplate)
+	if c.Name == s.HubClusterName {
+		template = s.SubjectTemplate
+	}
+	view.BoundAs = binding.FormatSubject(template, protemv1alpha1.RequesterInfo{Email: user.Email, Username: user.Username})
 	var lease coordinationv1.Lease
 	key := client.ObjectKey{Namespace: fleet.ClusterNamespace(c.Name), Name: fleet.AgentLeaseName}
 	if err := s.Client.Get(ctx, key, &lease); err == nil {
@@ -405,7 +410,7 @@ func (s *Server) clusterView(ctx context.Context, c *protemv1alpha1.TargetCluste
 	return view
 }
 
-func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request, _ UserInfo) {
+func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request, user UserInfo) {
 	ctx := r.Context()
 
 	var list protemv1alpha1.TargetClusterList
@@ -421,7 +426,7 @@ func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request, _ UserIn
 	slices.SortFunc(list.Items, func(a, b protemv1alpha1.TargetCluster) int { return byName(&a, &b) })
 	views := make([]ClusterView, 0, len(list.Items))
 	for i := range list.Items {
-		views = append(views, s.clusterView(ctx, &list.Items[i], active[list.Items[i].Name]))
+		views = append(views, s.clusterView(ctx, &list.Items[i], active[list.Items[i].Name], user))
 	}
 	s.writeJSON(w, http.StatusOK, views)
 }

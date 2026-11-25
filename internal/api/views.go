@@ -291,6 +291,8 @@ type ClusterView struct {
 	Subject           string            `json:"subject,omitempty"`
 	Enforcement       string            `json:"enforcement,omitempty"`
 	ManagedBy         string            `json:"managedBy,omitempty"`
+	// BoundAs is the Kubernetes user name the caller would be bound as on this cluster.
+	BoundAs string `json:"boundAs"`
 	// Agent is "none" for the hub itself (it has no agent), "waiting" for a cluster whose agent has
 	// never reported in, "connected" while its heartbeat is fresh, and "lost" once it is not.
 	Agent string `json:"agent"`

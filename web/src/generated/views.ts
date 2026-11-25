@@ -314,6 +314,10 @@ export interface ClusterView {
   enforcement?: string;
   managedBy?: string;
   /**
+   * BoundAs is the Kubernetes user name the caller would be bound as on this cluster.
+   */
+  boundAs: string;
+  /**
    * Agent is "none" for the hub itself (it has no agent), "waiting" for a cluster whose agent has
    * never reported in, "connected" while its heartbeat is fresh, and "lost" once it is not.
    */

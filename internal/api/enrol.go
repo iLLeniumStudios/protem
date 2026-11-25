@@ -78,7 +78,7 @@ func (s *Server) addCluster(w http.ResponseWriter, r *http.Request, user UserInf
 	}
 	s.recordEvent(c, "ClusterAdded", "TargetCluster added by "+who)
 	apiLog.Info("TargetCluster added", "name", c.Name, "user", who)
-	s.writeJSON(w, http.StatusCreated, s.clusterView(ctx, c, 0))
+	s.writeJSON(w, http.StatusCreated, s.clusterView(ctx, c, 0, user))
 }
 
 func (s *Server) getCluster(ctx context.Context, w http.ResponseWriter, name string, c *protemv1alpha1.TargetCluster) bool {

@@ -251,5 +251,5 @@ func (s *Server) patchCluster(w http.ResponseWriter, r *http.Request, user UserI
 		s.writeJSON(w, http.StatusInternalServerError, map[string]string{errorKey: err.Error()})
 		return
 	}
-	s.writeJSON(w, http.StatusOK, s.clusterView(ctx, &c, active[c.Name]))
+	s.writeJSON(w, http.StatusOK, s.clusterView(ctx, &c, active[c.Name], user))
 }
