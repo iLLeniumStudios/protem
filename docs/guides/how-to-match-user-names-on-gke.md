@@ -3,14 +3,17 @@
 Make the name Protem binds people as on a GKE cluster the same name that cluster gives them, so
 an active grant gives access.
 
-**Tested:** two runs. On 2026-11-25, chart 0.1.4, every result below not otherwise marked was seen
-on two GKE Standard zonal clusters (Kubernetes 1.36, europe-north1), one as the hub and one as a
-target cluster with an agent. Google service accounts stood in for people, signing in to the
-hub's API with Google-signed ID tokens (issuer `https://accounts.google.com`). A second run, on
-chart 0.1.5, used a Standard hub and an **Autopilot** target, with Microsoft Entra ID sign-in
-through the web UI instead of direct Google tokens. Not tested in either run: the web UI with
-Google sign-in (it needs an OAuth client), human Google accounts other than the project owner,
-Google Groups for RBAC, and workforce identity federation.
+**Tested:** on 2026-11-25, on GKE clusters in europe-north1 (Kubernetes 1.36), one as the hub
+and one as a target cluster with an agent:
+
+- chart 0.1.4, two Standard clusters, Google service accounts standing in for people and
+  signing in to the hub's API with Google-signed ID tokens;
+- chart 0.1.5, a Standard hub and an **Autopilot** target, with Microsoft Entra ID sign-in
+  through the web UI;
+- chart 0.1.5, the same clusters, with Google sign-in through the web UI as two personal Google
+  accounts: one requested, the other approved, and the first then used `kubectl`.
+
+Not tested: Google Workspace accounts, Google Groups for RBAC, and workforce identity federation.
 
 ## Find out which identity GKE gives a caller
 
@@ -27,18 +30,32 @@ membership as Kubernetes groups.
 
 There is nothing to configure on the cluster: leave `TargetCluster.spec.subject` empty (it then
 falls back to the chart's `subjectTemplate`, `{{.Email}}` by default), or set it to `{{.Email}}`
-explicitly. With `{{.Username}}` instead, the binding named the numeric id the hub's HTTP API
-reads from the token (see below) and gave no access: the grant showed `Active` and
-`kubectl` was refused.
+explicitly. On 0.1.5 and earlier, `{{.Username}}` instead bound the numeric id of the Google
+account and gave no access: the grant showed `Active` and `kubectl` was refused. From 0.1.6 the
+username of a Google sign-in is the email (see below), so both templates render the same name.
 
 ## What the hub reads from a token
 
-With Google sign-in, the hub's HTTP API (the UI and `/api/*`, behind the OIDC ID token) resolves
-`username` as the token's numeric `sub`, `email` as the email, and no groups: Google issues no
-`groups` claim. Name people in `AccessProfile.spec.requesters.users` /
-`approval.rules[].approvers.users` by email, never by the numeric id — nothing on GKE ever
-produces that id as a Kubernetes username, so a profile that lists it matches no one. Give hub
+With Google sign-in, the hub's HTTP API (the UI and `/api/*`, behind the OIDC ID token) reads
+`email` as the email and no groups: Google issues no `groups` claim and no
+`preferred_username`. The username is the email from 0.1.6; on 0.1.5 and earlier it was the
+token's numeric `sub`, which is what the UI then showed as the person's name. Name people in
+`AccessProfile.spec.requesters.users` / `approval.rules[].approvers.users` by email. Give hub
 admin rights with Kubernetes RBAC on `User <email>`.
+
+To put Google sign-in in front of the UI, create an OAuth client of type "Web application" in
+the Google Cloud console with the redirect URI `<authProxy.publicURL>/oauth2/callback`, and set
+`oidc.issuerURL: https://accounts.google.com`, `oidc.clientID` to the client's id, and the
+client secret in the proxy's Secret. Leave `authProxy.scope` at `openid email profile`. With
+this, a person signed in, requested a profile that lists them in `requesters.users`, a second
+person listed in `approvers.users` approved it, and the binding on the target cluster named the
+first person's Google email. As that person, `kubectl` could read the granted namespace, could
+not write there (the role was `view`) and was refused in every other namespace; the agent removed
+the binding one second after the grant's end time, and the same commands were then refused.
+
+How long such a session lasts was not observed. Google's ID tokens are valid for about an hour,
+and whether the proxy can renew one depends on Google giving it a refresh token, which this
+setup does not ask for; expect the UI to show "You're signed out" after about an hour.
 
 With an identity provider that carries groups in front of the UI instead (Microsoft Entra ID, as
 in the second run), `username` is the UPN, `email` is the person's `mail`, and groups work for

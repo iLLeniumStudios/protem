@@ -775,3 +775,44 @@ Still open:
   as a subject on GKE; the default `{{.Email}}` is right.
 - The API accepts a request from someone a profile does not allow (201), and the controller
   then rejects it. Correct outcome, late answer.
+
+---
+
+# Recheck 11 (2026-11-25): GKE again, with the web UI
+
+Protem 0.1.5 from the published chart ran on a GKE Standard hub and an Autopilot target, first
+with Microsoft Entra ID sign-in through the web UI, then with Google sign-in through the web UI
+as two personal Google accounts. Evidence is kept outside git (`gke-test/015/`). Everything
+created in Google Cloud and Entra ID was deleted and confirmed gone.
+
+Confirmed:
+
+- **The 0.1.5 same-person fix**, on a real cluster: a `kubectl` request naming only the username
+  shows as its owner's in the UI, she can cancel it, and duplicates are refused both ways.
+- **Entra ID in the web UI with GKE**: a request made and approved in the UI binds the person's
+  Google identity, when their Entra `mail` is that identity's email.
+- **Google sign-in in the web UI**: one account requested, another approved, the first read the
+  granted namespace with `kubectl`, could not write and was refused elsewhere; the agent removed
+  the binding one second after the end time and the same commands were then refused.
+- **Autopilot**: the agent runs; Autopilot raises its resource requests with a warning and
+  needs a few minutes to bring up a node on a fresh cluster.
+
+Found and fixed (0.1.6):
+
+- A revoked or expired grant went on showing its clusters as `Active`.
+- The API accepted a request from someone the profile does not list and the controller rejected
+  it a second later; the API now refuses it.
+- With a token that has an email but no `preferred_username` (Google), the username was the
+  opaque `sub`, which the UI showed as the person's name; it is now the email.
+- "Change it in Git" for an object Helm manages; a truncated name in the connect dialog; the
+  wrong port in the chart's notes when the proxy's public URL is on localhost.
+- **Docs:** Entra ID leaves out the `email` claim for an address in a domain the tenant has not
+  verified, and the hub then binds the UPN; `kubectl` requests on GKE cannot carry groups.
+
+Still open:
+
+- A tenant with a verified domain emitting `email` without the app override: not tested.
+- Google Workspace accounts, Google Groups for RBAC, workforce identity federation: not tested.
+- How long a Google sign-in session lasts in the UI: not observed.
+- The UI shows a person under two names (username in titles, email elsewhere) and approver
+  groups as bare object ids.
