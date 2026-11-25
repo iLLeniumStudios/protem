@@ -64,7 +64,7 @@ cosign verify ghcr.io/illeniumstudios/charts/protem:<version> \
 
 The images `ghcr.io/illeniumstudios/protem:v<version>` and `protem-agent:v<version>` verify the same way.
 
-Protem has not had an independent security review. It has been run on kind, k3d and AKS (with Microsoft Entra ID sign-in), not yet on EKS or GKE.
+Protem has not had an independent security review. It has been run on kind, k3d, AKS and EKS (with Microsoft Entra ID sign-in), not on GKE.
 
 ## Reporting a vulnerability
 

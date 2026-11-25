@@ -689,3 +689,53 @@ Still open:
   mapping are unproven there.
 - Listing profiles evaluates the approval rules once per profile and ready cluster; fine for
   hundreds, not measured beyond that.
+
+---
+
+# Recheck 9 (2026-11-25): managed clusters (AKS, EKS), Keycloak, and what they found
+
+Verification run: `make test` (envtest, 10 specs) and `make lint` pass; the UI type-checks and
+its tests pass. Protem ran on AKS and on EKS with Microsoft Entra ID sign-in, a hub and a
+separate target cluster each time, and on k3s with Keycloak. Evidence is kept outside git in
+`aks-test/` and `eks-test/`. Everything created in Azure, AWS and Entra ID was deleted and
+confirmed gone.
+
+Found by those runs and fixed:
+
+- **A `kubectl` request on a hub whose API server prefixes names (`oidc:alice`).** The
+  admission policy compared the prefixed name, so one person was two requesters and the binding
+  got the prefix twice (`oidc:oidc:alice`). The policy now takes the two prefixes
+  (`admissionPolicy.usernamePrefix`, `groupsPrefix`) and compares without them. Proven by an
+  API server in the test suite, not by a rerun on EKS or Keycloak.
+- **The hub's own cluster ignored its `spec.subject`** while the UI offered it. The API now
+  refuses it and the UI shows it read-only.
+- **`TargetCluster.spec.subject` defaulted to `{{.Email}}` in the CRD**, so "empty means the
+  operator's template" never happened. The default is gone.
+- **Grants on the hub's own cluster stayed `Pending` per cluster** although the binding existed.
+  The operator now reports its own bindings, and a failed hub binding as `Failed` without
+  holding back the other clusters.
+- **`oidc:{{.Email}}` with no email rendered the bare prefix.** It renders the username.
+- **Pages a person may not use opened by URL** (the data calls were refused). They show Not found.
+- **An identity provider behind a private CA** crashed the operator and the proxy.
+  `oidc.caConfigMap` adds the CA; proven on k3d against a stand-in issuer.
+- **Docs:** `appRoleAssignmentRequired` in the Entra ID guide; guides for Keycloak and for user
+  names on EKS.
+
+Found by the independent review of those fixes and fixed before release:
+
+- With a prefix set, a name from the identity provider that became `system:...` once the prefix
+  was removed would have been accepted. Such names and groups are refused.
+- A hub binding that failed after being active left the hub reported as `Active`.
+- The grant's permissions view lost the hub's subject and bindings; a `ClusterGrant` left for
+  the hub by an older version is removed.
+- A `null` prefix in the chart rendered a prefix nobody has (fails closed).
+
+Still open:
+
+- A shared IAM role on EKS (the IAM Identity Center pattern): EKS rewrites `@` in the session
+  name, so a subject built from an email does not match. AWS documents `{{SessionNameRaw}}` for
+  this; not run. No grant was bound for a shared role.
+- Nothing has run on GKE.
+- The API accepts a request from someone a profile does not allow (201), and the controller
+  then rejects it. Correct outcome, late answer.
+- The prefix settings and `oidc.caConfigMap` have not been run on EKS or with Keycloak itself.

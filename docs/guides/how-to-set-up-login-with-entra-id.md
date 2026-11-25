@@ -2,7 +2,7 @@
 
 Put oauth2-proxy in front of a hub installed with the Helm chart in `deploy/helm/protem`, reached at a hostname over HTTPS, and sign people in with Microsoft Entra ID.
 
-**Tested:** this guide was followed end to end on 2026-11-25 against a real Entra ID tenant on the Free tier, with the hub and a separate target cluster on AKS (Kubernetes 1.36, Microsoft Entra integration with Kubernetes RBAC). Not tested: group-based assignment with P1 or P2, guest accounts, people in more than 200 groups, and Conditional Access or MFA policies.
+**Tested:** this guide was followed end to end on 2026-11-25 against a real Entra ID tenant on the Free tier, with the hub and a separate target cluster on AKS (Kubernetes 1.36, Microsoft Entra integration with Kubernetes RBAC), and again with the hub and a separate target cluster on two EKS clusters (Kubernetes 1.37, eu-north-1). Not tested: group-based assignment with P1 or P2, guest accounts, people in more than 200 groups, and Conditional Access or MFA policies.
 
 ## Register the application
 
@@ -31,7 +31,7 @@ Add the optional claim anyway, even though oauth2-proxy's `oidc` provider alread
 
 ## Restrict who can sign in
 
-Under **Enterprise applications**, find the app, open **Properties**, and set **Assignment required?** to **Yes** ([restrict your app to a set of users](https://learn.microsoft.com/en-us/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users)); this works on the Free tier. Then, under **Users and groups**, choose **Add user/group** and assign the people who should reach the hub (and groups, if you have P1 or P2). Conditional access policies and MFA requirements that apply to other applications in the tenant apply here too.
+Under **Enterprise applications**, find the app, open **Properties**, and set **Assignment required?** to **Yes** ([restrict your app to a set of users](https://learn.microsoft.com/en-us/entra/identity-platform/howto-restrict-your-app-to-a-set-of-users)); this works on the Free tier. A freshly registered app does not require assignment by default, so skipping this step leaves every tenant member able to sign in regardless of who is listed below. From the CLI: `az ad sp update --id <service principal id> --set appRoleAssignmentRequired=true`. Then, under **Users and groups**, choose **Add user/group** and assign the people who should reach the hub (and groups, if you have P1 or P2). Conditional access policies and MFA requirements that apply to other applications in the tenant apply here too.
 
 ## Install or upgrade Protem
 
@@ -129,7 +129,7 @@ spec:
   subject: '{{.Username}}'
 ```
 
-Use `{{.Username}}`: the hub reads it from `preferred_username`, which for a member of the tenant is the UPN. `{{.Email}}` gives the same string only while the person has no `mail` attribute. Once they have one that differs from the UPN, `{{.Email}}` produces a binding for a name AKS never uses: the grant shows as active and gives no access, with no error anywhere. Set the chart's `subjectTemplate` the same way, as above; it names people in bindings on the hub itself and in the hub's own permission checks. For a cluster that authenticates some other way (its own OIDC issuer, a service account token, or local RBAC), match its `subject` to however it names the same email or username instead.
+Use `{{.Username}}`: the hub reads it from `preferred_username`, which for a member of the tenant is the UPN. `{{.Email}}` gives the same string only while the person has no `mail` attribute. Once they have one that differs from the UPN, `{{.Email}}` produces a binding for a name AKS never uses: the grant shows as active and gives no access, with no error anywhere. Set the chart's `subjectTemplate` the same way, as above; it names people in bindings on the hub itself and in the hub's own permission checks. For a cluster that authenticates some other way (its own OIDC issuer, a service account token, or local RBAC), match its `subject` to however it names the same email or username instead. On EKS, names and prefixes work differently again: see [How to match user names on EKS](how-to-match-user-names-on-eks.md).
 
 ## Check it works
 

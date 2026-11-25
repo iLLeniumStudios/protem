@@ -171,6 +171,10 @@ files install; see [Operator flags](../reference/operator-flags.md).
    active and give no access; see
    [How to fix a grant that gives no access](../operations/runbooks/how-to-fix-a-grant-that-gives-no-access.md).
 
+   An empty **Subject** means the operator's own `subjectTemplate` (the chart value set at
+   install), the same as if the field were never set. The hub's own cluster is the exception:
+   see [Register the hub cluster](how-to-install-with-helm.md#register-the-hub-cluster).
+
 The join token works for `--join-token-ttl` (default 15 minutes, allowed 10m to 1h), so run the
 command soon. The agent replaces the join token with its own renewing token once a third of the
 token's life has passed, about five minutes after it starts with the default.

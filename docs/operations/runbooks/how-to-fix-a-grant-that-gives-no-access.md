@@ -34,6 +34,13 @@ the `Username` that `auth whoami` printed, this is the cause.
 - Microsoft Entra ID on AKS: `{{.Username}}`.
 - A cluster whose OIDC setup adds a prefix (`--oidc-username-prefix`) needs that prefix as
   literal text, for example `oidc:{{.Email}}`.
+- A subject that already has the prefix built in, used against a caller whose name the API
+  server already prefixed (for example an admission-policy `usernamePrefix` or a
+  `--oidc-username-prefix`), binds the prefix twice: `oidc:oidc:alice` matches nobody. The
+  prefix belongs in the subject template, or in the identity, never both.
+- On EKS, a shared IAM role named by its session can have its user name rewritten: EKS replaces
+  `@` with `-` in the name RBAC sees, so a subject built from an email address does not match
+  the session. See [How to match user names on EKS](../../guides/how-to-match-user-names-on-eks.md).
 
 ```sh
 kubectl --context hub patch targetcluster <cluster> --type merge -p '{"spec":{"subject":"{{.Username}}"}}'

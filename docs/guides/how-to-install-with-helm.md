@@ -79,6 +79,11 @@ Without it, a profile that targets the hub shows "None of this profile's cluster
 right now". Other clusters are added with an agent: see
 [How to connect a target cluster](how-to-connect-a-target-cluster.md).
 
+The hub always binds people on its own cluster with `subjectTemplate`, ignoring that
+`TargetCluster`'s own `spec.subject`: the API refuses to set it there, and the UI shows the field
+read-only for this cluster. On every other cluster, an empty `spec.subject` falls back to that
+same `subjectTemplate`.
+
 ## Example: login with the bundled auth proxy
 
 Register an OIDC client with your identity provider with the redirect URI
