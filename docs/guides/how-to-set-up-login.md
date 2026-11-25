@@ -20,8 +20,12 @@ user or those groups. For exactly which claims the hub reads and in what order, 
 oauth2-proxy container to the manager pod and a Service named `protem-ui`.
 
 1. Register an OIDC client with your identity provider. Redirect URI:
-   `https://<your UI host>/oauth2/callback`. The client must return a refresh token; Microsoft
-   Entra ID does so only when the proxy also asks for the `offline_access` scope.
+   `https://<your UI host>/oauth2/callback`. The client must return a refresh token. Microsoft
+   Entra ID returns one only when the proxy requests the `offline_access` scope: add
+   `--scope=openid email profile offline_access` to the proxy in
+   `config/auth-proxy/manager_patch.yaml`, or set `authProxy.scope` with the Helm chart.
+   Keycloak returns one without it, and can reject the scope with "Offline tokens not allowed"
+   when the user or client lacks the `offline_access` role.
 2. Set the three values in `config/auth-proxy/auth-proxy.env`:
 
    | Key | Value |

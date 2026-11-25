@@ -122,9 +122,24 @@ Delete it with `kubectl delete -k` and the same URL.
        targetPort: 8080
    ```
 
-2. **The hub as a cluster.** To grant access on the hub itself, create a `TargetCluster` named
-   like `PROTEM_HUB_CLUSTER_NAME` (default `local`). The operator marks it Ready without an
-   agent, and may bind only the `view` and `edit` roles there.
+2. **The hub as a cluster.** The bundle registers no cluster. To grant access on the hub
+   itself, apply a `TargetCluster` named like `PROTEM_HUB_CLUSTER_NAME` (default `local`), with
+   the labels your profiles select clusters by:
+
+   ```yaml
+   apiVersion: protem.dev/v1alpha1
+   kind: TargetCluster
+   metadata:
+     name: local
+     labels:
+       env: dev
+   spec:
+     displayName: Hub cluster
+   ```
+
+   The operator marks it Ready without an agent, and may bind only the `view` and `edit` roles
+   there. Until it exists, a profile that targets the hub shows "None of this profile's
+   clusters is ready right now".
 3. **Target clusters.** Connect each one with an agent:
    [How to connect a target cluster](how-to-connect-a-target-cluster.md). Connecting from the
    UI needs `PROTEM_UI_MANAGEMENT=enabled`, `PROTEM_HUB_API_URL`, and the ClusterRole in

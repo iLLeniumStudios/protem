@@ -45,8 +45,10 @@ helm show values oci://ghcr.io/illeniumstudios/charts/protem
 | `authProxy.enabled` | `false` | Run oauth2-proxy next to the operator as the only way into the UI |
 | `authProxy.publicURL` | none | The URL people open; the identity provider redirects to `<publicURL>/oauth2/callback` |
 | `authProxy.existingSecret` | none | Secret with the keys `client-secret` and `cookie-secret` |
+| `authProxy.scope` | oauth2-proxy's `openid email profile` | OAuth scopes the proxy requests; Microsoft Entra ID needs `offline_access` added |
 | `ingress.enabled`, `ingress.host`, `ingress.tls.secretName` | off | An Ingress for the UI |
 | `hubClusterName` | `local` | The `TargetCluster` name that means the hub itself |
+| `hubCluster.register`, `hubCluster.labels` | `true`, `{}` | Register the hub as a `TargetCluster`, and the labels profiles select it by |
 | `hubAPIURL` | none | The hub's API URL as agents reach it; needed to connect clusters from the UI |
 | `hubAllowedRoles` | `[view, edit]` | The only roles the operator may bind on the hub itself; `[]` grants nothing there |
 | `subjectTemplate` | `{{.Email}}` | How a person is named in bindings; must match how each cluster's API server names users |
@@ -59,21 +61,21 @@ Any other operator flag goes in `extraArgs`, and any other oauth2-proxy flag in
 
 ## Register the hub cluster
 
-Installing the chart does not register any cluster, the hub included. To grant access on the hub
-itself, apply a `TargetCluster` whose name is `hubClusterName`:
+The chart registers the hub as a target cluster: it creates a `TargetCluster` named
+`hubClusterName` (default `local`), which the operator marks Ready without an agent. Profiles
+select clusters by label, so give it the labels your profiles use:
 
 ```yaml
-apiVersion: protem.dev/v1alpha1
-kind: TargetCluster
-metadata:
-  name: local
-  labels:
-    env: dev
-spec:
+hubCluster:
   displayName: Hub cluster
+  labels:
+    env: prod
 ```
 
-Until it exists, a profile that targets the hub shows "None of this profile's clusters is ready
+To register it yourself instead, set `hubCluster.register=false`. If a `TargetCluster` with that
+name already exists and Helm did not create it, the chart leaves it as it is, labels included.
+
+Without it, a profile that targets the hub shows "None of this profile's clusters is ready
 right now". Other clusters are added with an agent: see
 [How to connect a target cluster](how-to-connect-a-target-cluster.md).
 
@@ -149,7 +151,8 @@ kubectl apply --server-side -f config/crd/bases/
 `helm uninstall` removes the operator, its RBAC and the admission policy. It leaves behind:
 
 - the CRDs, and with them every AccessProfile, AccessRequest, AccessGrant, ClusterGrant and
-  TargetCluster;
+  TargetCluster, including the hub's `TargetCluster` the chart created: target clusters are
+  removed while the operator still runs, as below, so `helm uninstall` keeps it;
 - the bindings the operator created for grants that are still active;
 - the namespaces `protem-cluster-<name>` the operator created for each target cluster;
 - the `protem-system` namespace, and any Secret you created in it.

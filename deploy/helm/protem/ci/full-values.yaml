@@ -15,6 +15,11 @@ hubAllowedRoles:
   - view
   - edit
   - admin
+hubCluster:
+  register: true
+  displayName: Production hub
+  labels:
+    env: prod
 podAnnotations:
   example.com/team: platform
 serviceAccount:
@@ -31,6 +36,7 @@ authProxy:
   enabled: true
   publicURL: https://protem.example.com
   existingSecret: oauth2-proxy
+  scope: openid email profile offline_access
   extraArgs:
     - --allowed-group=platform
 ingress:

@@ -59,8 +59,8 @@ authProxy:
   enabled: true
   publicURL: https://protem.example.com
   existingSecret: oauth2-proxy
+  scope: openid email profile offline_access     # Entra ID returns a refresh token only with offline_access
   extraArgs:
-  - --scope=openid email profile offline_access   # Entra ID returns a refresh token only with offline_access
   - --oidc-email-claim=preferred_username        # fallback for members with no mail attribute
 ingress:
   enabled: true
@@ -79,7 +79,7 @@ helm upgrade --install protem oci://ghcr.io/illeniumstudios/charts/protem \
   --namespace protem-system --create-namespace -f values.yaml
 ```
 
-Do not leave out `offline_access`. Without it Entra ID gives the proxy no refresh token, so the proxy cannot renew a session: someone removed from a group keeps that group in the hub until their next full sign-in, about an hour later. With it, the change reached the hub about four minutes after the removal, at the proxy's next refresh.
+Do not leave `offline_access` out of `authProxy.scope`. The chart's default scopes do not include it, and without it Entra ID gives the proxy no refresh token, so the proxy cannot renew a session: someone removed from a group keeps that group in the hub until their next full sign-in, about an hour later. With it, the change reached the hub about four minutes after the removal, at the proxy's next refresh.
 
 ## Use Entra groups in profiles
 

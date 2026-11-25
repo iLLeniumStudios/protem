@@ -24,6 +24,9 @@ Every value of the protem Helm chart in deploy/helm/protem, with its default and
 | `signOutURL` | `""` | URL the UI opens to sign out; empty hides the link, or uses /oauth2/sign_out when authProxy.enabled. |
 | `extraArgs` | `[]` | Extra command-line arguments for the operator. |
 | `hubAllowedRoles` | `["view","edit"]` | The only roles the operator may bind on the hub cluster itself; empty installs no such permission. |
+| `hubCluster.register` | `true` | Create the TargetCluster named hubClusterName, so access can be granted on the hub itself. An existing one that Helm does not manage is left alone, and helm uninstall keeps it. |
+| `hubCluster.displayName` | `Hub cluster` | Display name of that TargetCluster. |
+| `hubCluster.labels` | `{}` | Labels of that TargetCluster, which profiles select clusters by, e.g. {env: prod}. |
 | `replicaCount` | `1` | Operator replicas; above 1 turns on leader election. |
 | `resources` | `{"limits":{"cpu":"500m","memory":"128Mi"},"requests":{"cpu":"10m","memory":"64Mi"}}` | Resources of the operator container. |
 | `nodeSelector` | `{}` | Node selector of the operator pod. |
@@ -39,6 +42,7 @@ Every value of the protem Helm chart in deploy/helm/protem, with its default and
 | `authProxy.clientID` | `""` | Client ID the proxy logs users in with; defaults to oidc.clientID. |
 | `authProxy.publicURL` | `""` | Public URL of the UI, e.g. https://protem.example.com; the IdP redirects to <publicURL>/oauth2/callback. |
 | `authProxy.existingSecret` | `""` | Secret with the keys client-secret and cookie-secret. |
+| `authProxy.scope` | `""` | OAuth scopes the proxy requests (--scope); empty uses oauth2-proxy's default "openid email profile". Microsoft Entra ID needs offline_access added. |
 | `authProxy.extraArgs` | `[]` | Extra command-line arguments for oauth2-proxy, e.g. --allowed-group=... |
 | `ingress.enabled` | `false` | Create an Ingress for the UI Service. |
 | `ingress.className` | `""` | IngressClass to use; empty uses the cluster's default. |

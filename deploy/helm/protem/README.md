@@ -29,7 +29,9 @@ Nothing logs people in by default: the hub accepts only requests that carry an I
 | `authProxy.enabled` | `false` | Run oauth2-proxy next to the operator as the only way into the UI |
 | `authProxy.publicURL` | none | The URL people open |
 | `authProxy.existingSecret` | none | Secret with the keys `client-secret` and `cookie-secret` |
+| `authProxy.scope` | oauth2-proxy's `openid email profile` | OAuth scopes the proxy requests; Microsoft Entra ID needs `offline_access` added |
 | `ingress.enabled`, `ingress.host`, `ingress.tls.secretName` | off | An Ingress for the UI |
+| `hubCluster.register`, `hubCluster.labels` | `true`, `{}` | Register the hub as a `TargetCluster`, and the labels profiles select it by |
 | `hubAPIURL` | none | The hub's API URL as agents reach it; needed to connect clusters from the UI |
 | `hubAllowedRoles` | `[view, edit]` | The only roles the operator may bind on the hub itself |
 | `subjectTemplate` | `{{.Email}}` | How a person is named in bindings |

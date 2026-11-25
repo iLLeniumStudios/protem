@@ -1,0 +1,20 @@
+{{- if .Values.hubCluster.register }}
+{{- $name := .Values.hubClusterName | default "local" }}
+{{- $existing := lookup "protem.dev/v1alpha1" "TargetCluster" "" $name }}
+{{- if or (not $existing) (eq (dig "metadata" "labels" "app.kubernetes.io/managed-by" "" $existing) "Helm") }}
+apiVersion: protem.dev/v1alpha1
+kind: TargetCluster
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "protem.labels" . | nindent 4 }}
+    {{- with .Values.hubCluster.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    # Target clusters carry a finalizer only the operator removes, so they are deleted while it still runs.
+    helm.sh/resource-policy: keep
+spec:
+  displayName: {{ .Values.hubCluster.displayName | quote }}
+{{- end }}
+{{- end }}

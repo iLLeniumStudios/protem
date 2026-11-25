@@ -47,6 +47,14 @@ hubAllowedRoles:
   - view
   - edit
 
+hubCluster:
+  # Create the TargetCluster named hubClusterName, so access can be granted on the hub itself. An existing one that Helm does not manage is left alone, and helm uninstall keeps it.
+  register: true
+  # Display name of that TargetCluster.
+  displayName: Hub cluster
+  # Labels of that TargetCluster, which profiles select clusters by, e.g. {env: prod}.
+  labels: {}
+
 # Operator replicas; above 1 turns on leader election.
 replicaCount: 1
 
@@ -98,6 +106,8 @@ authProxy:
   publicURL: ""
   # Secret with the keys client-secret and cookie-secret.
   existingSecret: ""
+  # OAuth scopes the proxy requests (--scope); empty uses oauth2-proxy's default "openid email profile". Microsoft Entra ID needs offline_access added.
+  scope: ""
   # Extra command-line arguments for oauth2-proxy, e.g. --allowed-group=...
   extraArgs: []
 

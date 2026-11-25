@@ -134,6 +134,9 @@ spec:
         - --cookie-samesite=lax
         # Who may log in is decided by the IdP; narrow it with --allowed-group in authProxy.extraArgs.
         - "--email-domain=*"
+        {{- with $proxy.scope }}
+        - {{ printf "--scope=%s" . | quote }}
+        {{- end }}
         {{- range $proxy.extraArgs }}
         - {{ . | quote }}
         {{- end }}
