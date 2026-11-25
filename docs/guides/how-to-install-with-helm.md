@@ -22,6 +22,9 @@ helm install protem oci://ghcr.io/illeniumstudios/charts/protem \
   --set oidc.clientID=protem
 ```
 
+Replace the issuer and client ID with your identity provider's. The operator reads the issuer's
+discovery document when it starts, and does not start if it cannot reach it.
+
 By default the operator image is `ghcr.io/illeniumstudios/protem` tagged with the release, and
 nothing logs people in: the UI is reachable only through the `protem-ui` Service, and the hub
 accepts only requests that carry an ID token. Either turn on the bundled auth proxy (below) or

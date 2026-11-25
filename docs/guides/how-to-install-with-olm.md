@@ -55,7 +55,9 @@ instead, see [How to install with Helm](how-to-install-with-helm.md).
    ```
 
    Use a namespace of its own: a namespace may hold only one OperatorGroup, and OLM's
-   `operators` namespace already has one.
+   `operators` namespace already has one. Replace the issuer and client ID with your identity
+   provider's: the operator reads the issuer's discovery document when it starts, and does not
+   start if it cannot reach it.
 
 2. Apply it and wait for the phase `Succeeded`:
 
