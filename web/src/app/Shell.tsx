@@ -287,8 +287,8 @@ function Frame() {
           id="main"
           tabIndex={-1}
           className={cn(
-            'flex w-full flex-col gap-6 px-4 py-6 lg:px-10 lg:py-7',
-            workspace === 'access' && !paneOpen && 'max-w-[87.5rem]',
+            'mx-auto flex w-full flex-col gap-6 px-4 py-6 lg:px-10 lg:py-7',
+            workspace === 'access' ? 'max-w-[87.5rem]' : 'max-w-[120rem]',
           )}
         >
           {error && <LoadError message={error} />}

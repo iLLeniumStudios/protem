@@ -402,7 +402,7 @@ function ProfilePage({ ns, name }: { ns: string; name: string }) {
 export default function ProfileDetail() {
   const { ns = '', name = '' } = useParams();
   return (
-    <div className="flex w-full max-w-[87.5rem] flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[87.5rem] flex-col gap-6">
       <ProfilePage key={`${ns}/${name}`} ns={ns} name={name} />
     </div>
   );

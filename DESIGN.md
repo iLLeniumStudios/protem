@@ -62,7 +62,7 @@ Everything lives in `web/src/components/ui/` and is exported from `index.ts`. Ad
 
 - A `PageHeader` first, with at most one `primary` action (For you: "Request access"); other actions are `secondary`.
 - Then `Section`s, the most urgent first (on For you: what needs your decision, your access now, your requests).
-- Personal pages (My access) are capped at 1400 px (`max-w-[87.5rem]`) and drop the cap while the side panel is open. Console pages (Administration) run full width.
+- Page content is centred in the space beside the navigation. Personal pages (My access) and the profile pages are capped at 1400 px (`max-w-[87.5rem]`); console pages (Administration) at 1920 px (`max-w-[120rem]`), so tables do not stretch across a very wide screen.
 - Detail pages (request, grant) are a `PageHeader` with the status pill and object name under the title, then `Panel`s.
 
 ## Request rows
