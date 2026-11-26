@@ -88,7 +88,52 @@ Everything is a Kubernetes resource on the hub cluster.
 - **Target cluster** (`TargetCluster`): a cluster Protem grants access on. The hub itself can be one.
 - **Agent**: a small program on each target cluster. It reads the grants for its own cluster from the hub, creates the `RoleBinding`s, and removes them when they end.
 
-Each one is explained with a real manifest in [the concepts guide](docs/architecture/concepts.md).
+A profile is the one resource you write yourself. This one lets the `devs` group ask for `edit` in the `payments` namespace on the payments team's clusters, for up to four hours. Production clusters need an approver; the others are granted at once.
+
+```yaml
+apiVersion: protem.dev/v1alpha1
+kind: AccessProfile
+metadata:
+  name: payments-edit
+  namespace: default
+spec:
+  displayName: Payments edit
+  role:
+    kind: ClusterRole
+    name: edit
+  scope: Namespaced
+  namespaces:
+  - payments
+  clusters:
+    selector:
+      matchLabels:
+        team: payments
+  duration:
+    default: 1h
+    max: 4h
+  requesters:
+    groups:
+    - devs
+  justification:
+    reason: Required
+  approval:
+    pendingTimeout: 4h
+    rules:                    # each cluster gets the first rule that matches it
+    - name: prod-needs-sre
+      when:
+        clusterSelector:
+          matchLabels:
+            env: prod
+      mode: Manual
+      approvers:
+        groups:
+        - sre-leads
+      requiredApprovals: 1
+    - name: everywhere-else
+      mode: Auto
+```
+
+Requests are usually made in the web UI, and grants are created by the operator. Each resource is explained with a real manifest in [the concepts guide](docs/architecture/concepts.md).
 
 ## Core principles
 

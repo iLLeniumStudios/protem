@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -73,5 +74,32 @@ var _ = Describe("config/samples", func() {
 		DeferCleanup(func() { _ = client.IgnoreNotFound(k8sClient.Delete(ctx, grant)) })
 		Expect(grant.Spec.Role.Name).To(Equal("view"))
 		Expect(grant.Spec.Clusters).To(Equal([]string{"local"}))
+	})
+})
+
+var _ = Describe("README.md", func() {
+	It("shows only manifests the CRDs accept", func() {
+		ctx := context.Background()
+		readme, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+		Expect(err).NotTo(HaveOccurred())
+
+		blocks := regexp.MustCompile("(?s)```yaml\n(.*?)```").FindAllSubmatch(readme, -1)
+		Expect(blocks).NotTo(BeEmpty(), "the README has no yaml example")
+		for _, block := range blocks {
+			decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(block[1]), 4096)
+			for {
+				obj := &unstructured.Unstructured{}
+				if err := decoder.Decode(obj); errors.Is(err, io.EOF) {
+					break
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+				if len(obj.Object) == 0 {
+					continue
+				}
+				Expect(k8sClient.Create(ctx, obj)).To(Succeed(), "%s %s", obj.GetKind(), obj.GetName())
+				DeferCleanup(func() { _ = client.IgnoreNotFound(k8sClient.Delete(ctx, obj)) })
+			}
+		}
 	})
 })
